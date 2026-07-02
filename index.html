@@ -218,7 +218,7 @@
   .rp-cover .rp-cov-f{font-size:11px;color:#8A93A3;margin-top:8px}
   @media print{.rp-cover{page-break-after:always;padding-top:6mm}.rp-cover .rp-cover-img{width:100%;max-height:170mm;height:auto;object-fit:cover}.rp-cover .rp-cov-h{font-size:30px}}
 #syncBar{display:none!important}
-#topSync.topsync{position:fixed!important;top:max(6px,env(safe-area-inset-top))!important;right:8px!important;left:auto!important;bottom:auto!important;width:auto!important;max-width:none!important;min-width:24px!important;height:24px!important;z-index:80!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:3px;padding:0 8px!important;font-size:12px;font-weight:800;border-radius:20px!important;color:#fff;box-shadow:0 2px 7px rgba(0,0,0,.3)!important;cursor:pointer;transition:opacity .35s,transform .35s;font-variant-numeric:tabular-nums;white-space:nowrap}
+#topSync.topsync{position:fixed!important;top:max(6px,env(safe-area-inset-top))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;line-height:1!important;bottom:auto!important;width:auto!important;max-width:none!important;min-width:24px!important;height:24px!important;z-index:80!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:3px;padding:0 8px!important;font-size:12px;font-weight:800;border-radius:20px!important;color:#fff;box-shadow:0 2px 7px rgba(0,0,0,.3)!important;cursor:pointer;transition:opacity .35s,transform .35s;font-variant-numeric:tabular-nums;white-space:nowrap}
 #topSync.busy{background:#E8821A!important}#topSync.ok{background:#1E9E75!important}#topSync.off{background:#D8442F!important}#topSync.unconf{background:#5C6779!important}
 #topSync.hide{opacity:0!important;transform:scale(.5)!important;pointer-events:none!important}
 @keyframes tsspin{to{transform:rotate(360deg)}}
@@ -790,7 +790,7 @@ async function sbSelect(tabla,qs){var url=sbBase()+'/rest/v1/'+tabla+'?'+qs;var 
 async function sbDelete(tabla,qs){var url=sbBase()+'/rest/v1/'+tabla+'?'+qs;var r=await fetch(url,{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});if(!r.ok&&r.status!==404)throw new Error('del '+tabla+' '+r.status)}
 function pendingCount(){return (typeof _pendAll==='function')?_pendAll():state.partes.filter(function(p){return !p.synced}).length}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260701z20';try{var _av=document.getElementById('appVer');if(_av)_av.textContent='versión '+APP_VER}catch(_e){}
+var APP_VER='v20260701z21';try{var _av=document.getElementById('appVer');if(_av)_av.textContent='versión '+APP_VER}catch(_e){}
 var _SCRKEY='sgto4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
