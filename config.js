@@ -1,8 +1,6 @@
-/* === Conexión a Supabase (Oregón · us-west-2) ===
-   La OFICIAL (obra-feable) ahora corre sobre la base Oregon (obra-test-oregon),
-   que es copia 100% actual de la data de producción. São Paulo queda en retiro.
-   Clave pública "publishable" — segura en el navegador con RLS activo. */
+/* === Conexión a Supabase (Oregón · us-west-2) — base COLUMBITO (dedicada) ===
+   mytrrdjiqtznkiizqehh · clon 100%% de obra-test-oregon. Llave publishable (pública). */
 window.SUPA_CFG = {
-  url: "https://lotfscfgkgsnqwwnftoo.supabase.co",
-  key: "sb_publishable_1PFZ1zZjhhEthjkFFdI7rQ_uuPB0kaF"
+  url: "https://mytrrdjiqtznkiizqehh.supabase.co",
+  key: "sb_publishable_GxNitjiHu8LMBaPdGa4fRA_rwE-THDq"
 };
