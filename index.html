@@ -1118,7 +1118,8 @@ async function _restoreFromBackup(path,etiqueta){
   /* mpwipe ANTES de descongelar + espera 18s: si no, una pestaña con datos viejos en memoria los re-sube al descongelar */
   try{await fetch(sbBase()+'/rest/v1/dispositivos?device_id=neq.'+encodeURIComponent(deviceId()),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'mpwipe',cmd_ts:Date.now(),updated_at:new Date().toISOString()})})}catch(e){}
   for(var _rwc=18;_rwc>0;_rwc--){_mpProcSet(95+(18-_rwc)/18*3,'📢 Esperando a que los equipos borren su copia local… ('+_rwc+'s)');await new Promise(function(_r){setTimeout(_r,1000)});}
-  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
+  var _wnowR=Date.now();try{localStorage.setItem('obf4_wipe_seen',String(_wnowR))}catch(_esr){}
+  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,wipe_ts:_wnowR,updated_at:new Date().toISOString()})});
   _mpProcSet(100,'✅ Restaurado a la copia '+etiqueta+'. Reiniciando este equipo…');
   setTimeout(function(){window._mpRestoring=0;window._mpBusyProc=0;if(typeof _mpLocalWipe==='function')_mpLocalWipe();else location.reload()},2000);
  }catch(e){window._mpRestoring=0;window._mpBusyProc=0;var o=document.getElementById('_mpProc');if(o)o.remove();
@@ -1203,7 +1204,8 @@ async function _mpEndBody(){window._mpBusyProc=1;window._mpRestoring=1;_mpProcUI
   try{await fetch(sbBase()+'/rest/v1/dispositivos?device_id=neq.'+encodeURIComponent(deviceId()),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'mpwipe',cmd_ts:Date.now(),updated_at:new Date().toISOString()})})}catch(e){}
   /* CLAVE anti re-subida: seguir CONGELADO ~18s para que los equipos borren su copia local ANTES de descongelar */
   for(var _mwc=18;_mwc>0;_mwc--){_mpProcSet(95+(18-_mwc)/18*3,'📢 Esperando a que los equipos borren su copia de prueba… ('+_mwc+'s)');await new Promise(function(_r){setTimeout(_r,1000)});}
-  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
+  var _wnowE=Date.now();try{localStorage.setItem('obf4_wipe_seen',String(_wnowE))}catch(_ese){}
+  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,wipe_ts:_wnowE,updated_at:new Date().toISOString()})});
   window._modoPrueba=false;try{localStorage.setItem('obf4_modoprueba','')}catch(e){}try{localStorage.removeItem('obf4_mpbackup')}catch(e){}
   _mpProcSet(100,'✅ Base restaurada TAL COMO ESTABA. Este equipo también se reiniciará…');
   setTimeout(function(){window._mpRestoring=0;window._mpBusyProc=0;_mpLocalWipe()},2200);
@@ -1223,8 +1225,10 @@ function _mpToggle(){if(!(typeof esAdminReal==='function'&&esAdminReal())){toast
  }}
 var _mpPollBusy=false;
 async function _mpPoll(){try{if(_mpPollBusy)return;_mpPollBusy=true;if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine)){_mpPollBusy=false;return}
- var r=await fetch(sbBase()+'/rest/v1/app_config?select=modo_prueba,mp_quien,mp_rest&id=eq.1',{headers:sbHead()});if(!r.ok){_mpPollBusy=false;return}
+ var r=await fetch(sbBase()+'/rest/v1/app_config?select=modo_prueba,mp_quien,mp_rest,wipe_ts&id=eq.1',{headers:sbHead()});if(!r.ok){_mpPollBusy=false;return}
  var j=await r.json();var srv=!!(j&&j[0]&&j[0].modo_prueba);var quien=(j&&j[0]&&j[0].mp_quien)||'el administrador';var rest=!!(j&&j[0]&&j[0].mp_rest);
+ /* MARCA DE BORRADO: si el server tiene una marca más nueva que la vista por este equipo, hubo un Borrar base/Restaurar → auto-limpiar la caché local ANTES de poder re-subir datos viejos */
+ try{var _wts=+((j&&j[0]&&j[0].wipe_ts)||0);var _seen=+(localStorage.getItem('obf4_wipe_seen')||0);if(!_seen){localStorage.setItem('obf4_wipe_seen',String(_wts||0));}else if(_wts>_seen&&!window._mpRestoring){localStorage.setItem('obf4_wipe_seen',String(_wts));window._wipePending=1;if(typeof _logAdd==='function')_logAdd('cmd','marca de borrado nueva del server — limpiando este equipo');_mpPollBusy=false;if(typeof _mpLocalWipe==='function'){_mpLocalWipe();}else{location.reload();}return;}}catch(_ew){}
  if(!window._mpRestoring){window._mpFreeze=rest?1:0;_mpRestBar(rest&&!(typeof esAdminReal==='function'&&esAdminReal()));}
  if(!srv&&!rest&&!window._mpRestoring&&!document.getElementById('_mpProc')){window._mpBusyProc=0;window._mpEndRunning=false;}
  if(srv&&!window._modoPrueba)_mpApply(true,quien);
@@ -1489,7 +1493,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b70';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
+var APP_VER='v20260705b71';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -2254,7 +2258,7 @@ function setTopSync(kind,extra){var b=$('topSync');if(!b)return;var pend=((typeo
   if(kind==='pushing'){b.className='topsync busy';b.textContent='⬆ Subiendo cambios a la base…'+(pend?(' ('+pend+')'):'');return}
   if(kind==='pulling'){b.className='topsync busy';b.textContent='⬇ Recibiendo información de la base…';return}
   b.className='topsync ok';b.textContent='✓ Conectado · información recibida de la base'+(extra?(' · '+extra):'')}
-async function syncNow(silent){if(window._tabBloqueada)return;if(window._impBusy)return;if(window._mpRestoring)return;if(typeof _logAdd==='function')_logAdd('sync',(silent?'auto':'manual')+' inicio');try{if(typeof _presenceSync==='function'&&Date.now()-_lastPres>8000){_lastPres=Date.now();_presenceSync();}}catch(_pe){}
+async function syncNow(silent){if(window._tabBloqueada)return;if(window._impBusy)return;if(window._mpRestoring)return;if(window._wipePending)return;if(typeof _logAdd==='function')_logAdd('sync',(silent?'auto':'manual')+' inicio');try{if(typeof _presenceSync==='function'&&Date.now()-_lastPres>8000){_lastPres=Date.now();_presenceSync();}}catch(_pe){}
   if(!sbReady()){updSync();setTopSync('unconfig');if(!silent)toast('Configura Supabase primero (engranaje)');return}
   if(!navigator.onLine){updSync();setTopSync('offline');if(!silent)toast('Sin conexión: se subirá al reconectar');return}
   if(syncing){if(Date.now()-(window._syncT0||0)>45000){syncing=false;if(typeof _logAdd==='function')_logAdd('sync','candado pegado >45s — destrabado')}else return}
@@ -2952,7 +2956,8 @@ try{
     for(var _bi=0;_bi<_bakedRows.length;_bi+=200){var _lote=_bakedRows.slice(_bi,_bi+200);await _mpFetchR(sbBase()+'/rest/v1/metrados?on_conflict=proyecto,partida_id',{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_lote)})}}catch(_e4b){}
    est.textContent='4/4 · verificando el estado final del servidor…';
    for(var _ri=0;_ri<_rep.length;_ri++){_rep[_ri].quedan=await _wCount(_rep[_ri].tabla);}
-   try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,modo_prueba:false,updated_at:new Date().toISOString()})})}catch(_efz2){}
+   var _wnow=Date.now();try{localStorage.setItem('obf4_wipe_seen',String(_wnow))}catch(_esw){}
+   try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,modo_prueba:false,wipe_ts:_wnow,updated_at:new Date().toISOString()})})}catch(_efz2){}
    window._mpRestoring=0;
    try{['obf4_partes','obf4_nuevas','obf4_meta','obf4_repo','obf4_reinicios','obf4_edits','obf4_prog','obf4_calend','obf4_storm','obf4_restot','obf4_pend','obf4_delp','obf4_sent','obf4_cambios','obf4_progdel','obf4_cuadrillas','obf4_restrpart','obf4_diasopen','obf4_dpdone','obf4_pddone','obf4_iflogq'].forEach(function(k){try{localStorage.removeItem(k)}catch(_ek){}});Object.keys(localStorage).forEach(function(k){if(k.indexOf('obf4_tomb_')===0){try{localStorage.removeItem(k)}catch(_ek2){}}})}catch(_e6){}
    _wipeReporte(ov,_rep,paths.length,_bakedN);
