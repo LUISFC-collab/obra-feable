@@ -261,6 +261,40 @@
 @keyframes tsspin{to{transform:rotate(360deg)}}
 #topSync .ti{display:inline-block;font-size:13px;line-height:1;animation:tsspin .9s linear infinite}
 
+
+/* ===== MODO WEB / ESCRITORIO (opt-in en pantallas grandes; el modo celular queda intacto) ===== */
+#webToggle{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:2147483000;background:#1F3864;color:#fff;border:0;border-radius:0 0 12px 12px;padding:6px 18px;font:800 12.5px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.32);display:none;align-items:center;gap:6px}
+body.webmode{align-items:flex-start}
+body.webmode .phone{max-width:1120px;box-shadow:0 0 60px rgba(0,0,0,.18)}
+body.webmode header{padding-left:22px;padding-right:22px}
+/* barras de resumen y herramientas: cómodas, contenido centrado */
+body.webmode .sumbar,body.webmode .tools,body.webmode #syncBar{padding-left:22px;padding-right:22px}
+body.webmode .sumstats{max-width:820px;margin:0 auto}
+/* PANEL ADMIN: botones en 2 columnas */
+body.webmode #adminBox{max-width:1000px;margin-left:auto;margin-right:auto;display:grid;grid-template-columns:1fr 1fr;gap:9px;align-content:start}
+body.webmode #adminBox>div{grid-column:1/-1}
+body.webmode #adminBox>button{margin-bottom:0!important}
+/* "Mis partes por día" y acciones: contenido centrado a un ancho cómodo */
+body.webmode #scrDiario .scroll>div:not(#adminBox){max-width:760px;margin-left:auto;margin-right:auto}
+/* ACTIVIDADES: las tarjetas en cuadrícula (varias por fila) */
+body.webmode .wbs-kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;align-items:start;padding-left:12px;padding-right:12px}
+body.webmode .wbs-kids>button{grid-column:1/-1}
+body.webmode .wbs-head{max-width:none}
+/* avances del día / interferencias / resumen: centrados y no tan anchos */
+body.webmode #scrList .scroll>div{max-width:1080px;margin-left:auto;margin-right:auto}
+body.webmode #scrList .wbs-sys{max-width:none}
+/* desglose de avances del día, interferencias y resumen: centrados y no tan anchos */
+body.webmode #dayBreak,body.webmode #resumenHead,body.webmode #interfBars{max-width:900px!important;margin-left:auto!important;margin-right:auto!important}
+/* acciones de la pantalla de inicio (Cronograma/Tormenta/Restricción) centradas */
+body.webmode #scrDiario .scroll{display:flex;flex-direction:column;align-items:center}
+body.webmode #scrDiario .scroll>div:not(#adminBox){width:100%;max-width:760px}
+body.webmode #adminBox{width:100%}
+body.webmode #scrDiario>div[style*="border-top"]{max-width:760px;margin-left:auto;margin-right:auto;width:100%}
+/* SHEETS / INFORMES / MODALES: como diálogos anchos centrados (no pegados abajo) */
+body.webmode .sheet{align-items:center}
+body.webmode .sheet>.panel{max-width:920px!important;border-radius:16px!important;max-height:90vh!important}
+/* pantallas de listas largas (bitácora, pendientes, prog) más anchas */
+body.webmode #scrBita .scroll>*,body.webmode #scrPend .scroll>*,body.webmode #scrProg .scroll>*{max-width:900px;margin-left:auto;margin-right:auto}
 </style>
 <script src="config.js?v=20260630d"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}</script>
@@ -1412,7 +1446,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b60';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b61';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -3028,6 +3062,23 @@ if(!window._tabBloqueada&&state.user){selDisc=state.user.disc;$('inSup').value=s
  setTimeout(arma,3000);
  window.addEventListener('online',function(){setTimeout(arma,1200)});
  document.addEventListener('visibilitychange',function(){if(!document.hidden)arma()});
+})();
+
+/* ===== Toggle "Ver como web / Ver como celular" (solo pantallas grandes) ===== */
+(function(){
+ function _esDesktop(){try{return window.matchMedia('(min-width: 900px)').matches}catch(e){return (window.innerWidth||0)>=900}}
+ function _webApply(on){try{document.body.classList.toggle('webmode',!!on);try{localStorage.setItem('obf4_webmode',on?'1':'')}catch(e){}}catch(e){}_webSync()}
+ function _webSync(){var b=document.getElementById('webToggle');if(!b)return;var on=document.body.classList.contains('webmode');b.innerHTML=on?'📱 Ver como celular':'🖥 Ver como web (pantalla grande)';}
+ function _webBtn(){
+  var b=document.getElementById('webToggle');
+  if(!_esDesktop()){if(b)b.style.display='none';if(document.body.classList.contains('webmode'))document.body.classList.remove('webmode');return}
+  if(!b){b=document.createElement('button');b.id='webToggle';document.body.appendChild(b);
+   b.onclick=function(){var on=!document.body.classList.contains('webmode');if(on){if(!confirm('¿Preparar la vista para PANTALLA GRANDE (web)?\n\nTodo se reorganiza más ancho y ordenado (informes, listas y actividades en columnas). Puedes volver a “celular” cuando quieras. No cambia ningún dato.'))return}_webApply(on)};
+  }
+  b.style.display='flex';_webSync();
+ }
+ try{if(localStorage.getItem('obf4_webmode')==='1'&&_esDesktop())document.body.classList.add('webmode')}catch(e){}
+ try{_webBtn();window.addEventListener('resize',_webBtn)}catch(e){}
 })();
 </script>
 <div id="repPrint" class="rep-print"></div>
