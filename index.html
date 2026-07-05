@@ -1142,10 +1142,10 @@ async function sbSelect(tabla,qs){var url=sbBase()+'/rest/v1/'+tabla+'?'+qs;var 
 async function sbDelete(tabla,qs){var url=sbBase()+'/rest/v1/'+tabla+'?'+qs;var r=await fetch(url,{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});if(!r.ok&&r.status!==404)throw new Error('del '+tabla+' '+r.status)}
 function pendingCount(){return (typeof _pendAll==='function')?_pendAll():state.partes.filter(function(p){return !p.synced}).length}
 var _srvMs=null;
-function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
+function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260704b12';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260704b13';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -1419,13 +1419,13 @@ async function _importBackup(){
  ov=document.createElement('div');ov.id='_impOv';
  ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b1220;color:#cfe3ff;font:13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;display:flex;flex-direction:column;padding:12px;box-sizing:border-box';
  ov.innerHTML='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><b style="font-size:15px;color:#fff">📥 RESTAURAR BACKUP en el servidor</b><span id="_imEstado" style="color:#9db4d6">elige la copia…</span><button id="_imCerrar" style="margin-left:auto;background:#444;color:#fff;border:0;border-radius:8px;padding:8px 12px">✕ Cerrar</button></div>'
- +'<div style="background:#101a30;border:1px solid #243a5e;border-radius:10px;padding:10px;margin-bottom:8px"><div style="color:#FFD27A;font-weight:800;margin-bottom:6px">⚠ Esto deja el SERVIDOR exactamente como la copia elegida. Los datos actuales que no estén en la copia se pierden.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><label style="flex:1;min-width:200px;background:#1E7A46;color:#fff;border-radius:8px;padding:11px;font-weight:800;text-align:center;cursor:pointer">📦 Elegir el archivo ZIP del backup<input id="_imZipIn" type="file" accept=".zip" style="display:none"></label><label style="flex:1;min-width:200px;background:#33406a;color:#fff;border-radius:8px;padding:11px;font-weight:800;text-align:center;cursor:pointer">📁 Elegir la CARPETA descomprimida<input id="_imDirIn" type="file" webkitdirectory style="display:none"></label></div></div>'
+ +'<div style="background:#101a30;border:1px solid #243a5e;border-radius:10px;padding:10px;margin-bottom:8px"><div style="color:#FFD27A;font-weight:800;margin-bottom:6px">⚠ Restaura el SERVIDOR con una copia. Al final eliges: conservar lo cargado después de la copia, o borrarlo para quedar exacto.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><label style="flex:1;min-width:200px;background:#1E7A46;color:#fff;border-radius:8px;padding:11px;font-weight:800;text-align:center;cursor:pointer">📦 Elegir el archivo ZIP del backup<input id="_imZipIn" type="file" accept=".zip" style="display:none"></label><label style="flex:1;min-width:200px;background:#33406a;color:#fff;border-radius:8px;padding:11px;font-weight:800;text-align:center;cursor:pointer">📁 Elegir la CARPETA descomprimida<input id="_imDirIn" type="file" webkitdirectory style="display:none"></label></div></div>'
  +'<div id="_imResumen" style="background:#101a30;border:1px solid #243a5e;border-radius:10px;padding:10px;margin-bottom:8px;display:none"></div>'
- +'<button id="_imGo" style="display:none;background:#B42318;color:#fff;border:0;border-radius:10px;padding:13px;font-weight:800;font-size:14px;margin-bottom:8px">⚠ RESTAURAR EL SERVIDOR CON ESTA COPIA</button>'
+ +'<div id="_imGoWrap" style="display:none;margin-bottom:8px"><div style="background:#101a30;border:1px solid #243a5e;border-radius:10px;padding:10px;margin-bottom:8px;color:#FFD27A;font-weight:800">¿Qué hago con lo cargado DESPUÉS de esa copia (avances, metrados, fotos nuevas)?</div><button id="_imGoKeep" style="width:100%;background:#1E7A46;color:#fff;border:0;border-radius:10px;padding:13px;font-weight:800;font-size:13.5px">🟢 CONSERVARLO — la copia solo agrega lo que falte (no borra nada)</button><button id="_imGoWipe" style="width:100%;background:#B42318;color:#fff;border:0;border-radius:10px;padding:13px;font-weight:800;font-size:13.5px;margin-top:8px">🔴 BORRARLO — el servidor queda EXACTO a la copia (lo posterior se elimina)</button></div>'
  +'<div id="_imLista" style="flex:1;overflow:auto;background:#0d1117;border:1px solid #243a5e;border-radius:10px;padding:8px;font:12px/1.6 ui-monospace,Consolas,monospace"></div>';
  document.body.appendChild(ov);
  document.getElementById('_imCerrar').onclick=function(){if(window._impBusy){if(!confirm('La restauración está EN CURSO. ¿Seguro que quieres cerrar? El servidor puede quedar a medias.'))return}ov.remove()};
- var est=document.getElementById('_imEstado'),res=document.getElementById('_imResumen'),lst=document.getElementById('_imLista'),go=document.getElementById('_imGo');
+ var est=document.getElementById('_imEstado'),res=document.getElementById('_imResumen'),lst=document.getElementById('_imLista'),go=document.getElementById('_imGoWrap');
  function linea(t,color){var d=document.createElement('div');d.textContent=t;if(color)d.style.color=color;lst.appendChild(d);lst.scrollTop=lst.scrollHeight}
  var plan=null; /* {tablas:{nombre:filas[]}, fotos:[{path,data|file}], origen, manif} */
  function pintaResumen(){if(!plan)return;var tt=Object.keys(plan.tablas);var filas=0;tt.forEach(function(t){filas+=plan.tablas[t].length});
@@ -1453,12 +1453,31 @@ async function _importBackup(){
   plan={tablas:tablas,fotos:fotos,origen:'carpeta '+(raiz||'(backup)'),manif:manif};pintaResumen()}
  document.getElementById('_imZipIn').onchange=function(){if(this.files&&this.files[0])leerZip(this.files[0])};
  document.getElementById('_imDirIn').onchange=function(){if(this.files&&this.files.length)leerCarpeta(this.files)};
- go.onclick=async function(){if(!plan)return;
+ async function _imTodo(t,sel){var out=[],from=0;for(;;){var r=await fetch(sbBase()+'/rest/v1/'+t+'?select='+sel,{headers:Object.assign({},sbHead(),{Range:from+'-'+(from+999),'Range-Unit':'items'})});if(!r.ok)throw new Error(t+' HTTP '+r.status);var ch=await r.json();out=out.concat(ch);if(ch.length<1000)break;from+=1000}return out}
+ async function ejecutar(modo){if(!plan)return;
   var tt=Object.keys(plan.tablas);var filas=0;tt.forEach(function(t){filas+=plan.tablas[t].length});
-  if(!confirm('⚠ RESTAURAR EL SERVIDOR\n\nSe reemplaza TODO el contenido de '+tt.length+' tablas por la copia ('+filas+' filas) y se vuelven a subir '+plan.fotos.length+' fotos.\n\nLo que se cargó DESPUÉS de esa copia SE PIERDE.\nTodos los equipos bajarán la información restaurada.\n\n¿Continuar?'))return;
-  var pal=prompt('Para confirmar, escribe: RESTAURAR');if(pal==null)return;if(String(pal).trim().toUpperCase()!=='RESTAURAR'){toast('No se restauró (palabra incorrecta)');return}
-  go.disabled=true;go.style.opacity='.5';window._impBusy=1;var errores=0;
+  if(modo==='keep'){
+   if(!confirm('🟢 CONSERVAR LO NUEVO\n\nNo se borra NADA del servidor. La copia solo AGREGA lo que falte (actividades, avances, metrados o fotos que ya no estén).\nLo cargado después de la copia queda intacto.\n\n¿Continuar?'))return;
+  }else{
+   if(!confirm('🔴 BORRAR LO POSTERIOR\n\nSe reemplaza TODO el contenido de '+tt.length+' tablas por la copia ('+filas+' filas) y se vuelven a subir '+plan.fotos.length+' fotos.\n\nLo que se cargó DESPUÉS de esa copia SE ELIMINA para todos (las fotos quedan en la papelera).\nTodos los equipos limpiarán su caché y bajarán lo restaurado.\n\n¿Continuar?'))return;
+   var pal=prompt('Para confirmar, escribe: RESTAURAR');if(pal==null)return;if(String(pal).trim().toUpperCase()!=='RESTAURAR'){toast('No se restauró (palabra incorrecta)');return}
+  }
+  var b1=document.getElementById('_imGoKeep'),b2=document.getElementById('_imGoWipe');if(b1){b1.disabled=true;b1.style.opacity='.5'}if(b2){b2.disabled=true;b2.style.opacity='.5'}
+  window._impBusy=1;var errores=0; /* _impBusy también PAUSA el sync de esta app para que no re-suba datos a mitad de la restauración */
   try{
+   /* 0) sólo modo BORRAR: apuntar qué hay ahora que NO está en la copia → lápidas para que ningún equipo lo resucite */
+   var tumbas=[];
+   if(modo==='wipe'){est.textContent='comparando servidor vs copia…';
+    try{
+     var _dif=[['partes','client_id',''],['metrados','partida_id','cfg:metrados:'],['nuevas','partida_id','cfg:nuevas:'],['programacion','partida_id','cfg:programacion:']];
+     for(var di=0;di<_dif.length;di++){var dt=_dif[di][0],dc=_dif[di][1],dp=_dif[di][2];if(!plan.tablas[dt])continue;
+      var enCopia={};plan.tablas[dt].forEach(function(r){enCopia[String(r[dc])]=1});
+      var ahora=await _imTodo(dt,dc);var nvos=[];ahora.forEach(function(r){var v=String(r[dc]);if(v&&v!=='null'&&!enCopia[v]&&nvos.indexOf(v)<0)nvos.push(v)});
+      nvos.forEach(function(v){tumbas.push(dp?(dp+v):v)});
+      if(nvos.length)linea('• '+dt+': '+nvos.length+' registro(s) posteriores a la copia — se eliminarán con lápida','#FFD27A');
+     }
+    }catch(e){linea('⚠ No se pudo comparar para lápidas: '+((e&&e.message)||e)+' — sigo igual','#FFD27A')}
+   }
    /* 1) FOTOS al almacenamiento (primero, para que las URLs existan cuando lleguen las filas) */
    for(var fi=0;fi<plan.fotos.length;fi++){var fo=plan.fotos[fi];est.textContent='foto '+(fi+1)+'/'+plan.fotos.length+'…';
     try{var data=fo._file?new Uint8Array(await fo._file.arrayBuffer()):await _unzipData(fo._zip,fo._ent);
@@ -1466,29 +1485,52 @@ async function _importBackup(){
      var up=await fetch(sbBase()+'/storage/v1/object/'+FOTO_BUCKET+'/'+fotoEncPath(fo.path),{method:'POST',headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey,'x-upsert':'true','Content-Type':ct},body:data});
      if(up.ok){linea('✓ foto '+(fi+1)+'/'+plan.fotos.length+' '+fo.path.split('/').pop(),'#7fd7a5')}else{errores++;linea('✗ foto '+fo.path+' HTTP '+up.status,'#ff9d9d')}
     }catch(e){errores++;linea('✗ foto '+fo.path+' '+((e&&e.message)||e),'#ff9d9d')}}
-   /* 2) TABLAS: vaciar y volver a llenar con la copia */
+   /* 2) TABLAS */
    for(var ti=0;ti<tt.length;ti++){var t=tt[ti];var rows=plan.tablas[t];est.textContent='tabla '+(ti+1)+'/'+tt.length+': '+t+'…';
     if(_IMP_SKIP[t]){linea('↷ '+t+': omitida — '+_IMP_SKIP[t],'#FFD27A');continue}
     var pk=_impPk(t);if(!pk){linea('↷ '+t+': omitida — tabla desconocida para restaurar','#FFD27A');continue}
     try{
-     var col1=pk.split(',')[0];
-     var del=await fetch(sbBase()+'/rest/v1/'+t+'?'+col1+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
-     if(!del.ok&&del.status!==404)throw new Error('vaciar HTTP '+del.status);
      if(t==='fotos'){rows=rows.map(function(r){var n={};for(var k in r)n[k]=r[k];if(n.path)n.url=fotoPublicUrl(n.path);return n})}
-     for(var ci=0;ci<rows.length;ci+=300){var chunk=rows.slice(ci,ci+300);
-      var ins=await fetch(sbBase()+'/rest/v1/'+t+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(chunk)});
-      if(!ins.ok)throw new Error('subir filas HTTP '+ins.status)}
-     linea('✓ tabla '+t+': restaurada con '+rows.length+' filas','#7fd7a5');
+     if(modo==='keep'){
+      /* CONSERVAR: no borrar nada; solo insertar las filas de la copia que ya no existan */
+      var cols=pk.split(',');var kfn=function(r){return cols.map(function(c){return String(r[c])}).join('|')};
+      var act=await _imTodo(t,pk);var hay={};act.forEach(function(r){hay[kfn(r)]=1});
+      var faltan=rows.filter(function(r){return !hay[kfn(r)]});
+      for(var ci=0;ci<faltan.length;ci+=300){var chunk=faltan.slice(ci,ci+300);
+       var ins=await fetch(sbBase()+'/rest/v1/'+t+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(chunk)});
+       if(!ins.ok)throw new Error('agregar filas HTTP '+ins.status)}
+      linea('✓ tabla '+t+': +'+faltan.length+' recuperadas de la copia · '+(rows.length-faltan.length)+' ya estaban · lo nuevo intacto','#7fd7a5');
+     }else{
+      /* BORRAR: vaciar y dejar exactamente la copia */
+      var col1=pk.split(',')[0];
+      var del=await fetch(sbBase()+'/rest/v1/'+t+'?'+col1+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
+      if(!del.ok&&del.status!==404)throw new Error('vaciar HTTP '+del.status);
+      for(var ci2=0;ci2<rows.length;ci2+=300){var chunk2=rows.slice(ci2,ci2+300);
+       var ins2=await fetch(sbBase()+'/rest/v1/'+t+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(chunk2)});
+       if(!ins2.ok)throw new Error('subir filas HTTP '+ins2.status)}
+      linea('✓ tabla '+t+': restaurada con '+rows.length+' filas','#7fd7a5');
+     }
     }catch(e){errores++;linea('✗ tabla '+t+': '+((e&&e.message)||e),'#ff9d9d')}}
-   /* 3) limpiar el caché de TODOS los equipos para que bajen lo restaurado (no re-suban datos viejos) */
-   try{est.textContent='avisando a los equipos…';await fetch(sbBase()+'/rest/v1/dispositivos?proyecto=eq.'+encodeURIComponent(DATA.proyecto),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'debug',cmd_ts:(typeof nowSrv==='function'?nowSrv():Date.now()),updated_at:new Date().toISOString()})});linea('✓ Orden enviada a todos los equipos: limpiar caché y bajar lo restaurado','#7fd7a5')}catch(e){linea('⚠ No se pudo avisar a los equipos — usa 📱 Dispositivos → 🧹 Debug TODOS','#FFD27A')}
-   window._impBusy=0;est.textContent=errores?('terminado con '+errores+' errores'):'✓ restauración completa';
-   linea(errores?('⚠ Terminado con '+errores+' errores — revisa arriba'):'✓ SERVIDOR RESTAURADO COMPLETO','#fff');
-   var fin=document.createElement('button');fin.textContent='✓ Listo — recargar la app con los datos restaurados';fin.style.cssText='background:#1E7A46;color:#fff;border:0;border-radius:10px;padding:13px;font-weight:800;font-size:14px;margin-top:8px';
-   fin.onclick=function(){try{['obf4_partes','obf4_nuevas','obf4_meta','obf4_repo','obf4_reinicios','obf4_edits','obf4_prog','obf4_calend','obf4_storm','obf4_restot','obf4_pend','obf4_delp','obf4_sent','obf4_cambios','obf4_progdel','obf4_cuadrillas','obf4_rolperms','obf4_restrpart','obf4_diasopen','obf4_dpdone','obf4_pddone'].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});Object.keys(localStorage).forEach(function(k){if(k.indexOf('obf4_tomb_')===0){try{localStorage.removeItem(k)}catch(e){}}})}catch(e){}location.reload()};
-   lst.appendChild(fin);fin.scrollIntoView();
+   /* 3) sólo modo BORRAR: escribir las lápidas y limpiar el caché de TODOS los equipos */
+   if(modo==='wipe'){
+    if(tumbas.length){est.textContent='escribiendo lápidas…';
+     try{var _tq=(typeof nowSrv==='function'?nowSrv():Date.now());var _tr=tumbas.map(function(v){return {client_id:v,proyecto:DATA.proyecto,ts:_tq,cell_at:Date.now(),quien:'restauración de backup'}});
+      for(var tz=0;tz<_tr.length;tz+=300){var _tc=_tr.slice(tz,tz+300);var _ti=await fetch(sbBase()+'/rest/v1/borrados?on_conflict=client_id',{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_tc)});if(!_ti.ok)throw new Error('HTTP '+_ti.status)}
+      linea('✓ '+tumbas.length+' lápida(s): lo posterior a la copia no podrá volver desde ningún equipo','#7fd7a5');
+     }catch(e){errores++;linea('✗ lápidas: '+((e&&e.message)||e),'#ff9d9d')}}
+    try{est.textContent='avisando a los equipos…';await fetch(sbBase()+'/rest/v1/dispositivos?proyecto=eq.'+encodeURIComponent(DATA.proyecto),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'debug',cmd_ts:(typeof nowSrv==='function'?nowSrv():Date.now()),updated_at:new Date().toISOString()})});linea('✓ Orden enviada a todos los equipos: limpiar caché y bajar lo restaurado','#7fd7a5')}catch(e){linea('⚠ No se pudo avisar a los equipos — usa 📱 Dispositivos → 🧹 Debug TODOS','#FFD27A')}
+   }
+   est.textContent=errores?('terminado con '+errores+' errores'):'✓ restauración completa';
+   linea(errores?('⚠ Terminado con '+errores+' errores — revisa arriba'):(modo==='keep'?'✓ COPIA AGREGADA — lo nuevo quedó intacto':'✓ SERVIDOR RESTAURADO EXACTO A LA COPIA'),'#fff');
+   /* recarga: en BORRAR limpia también el caché local para bajar todo fresco */
+   var fin=function(){if(modo==='wipe'){try{['obf4_partes','obf4_nuevas','obf4_meta','obf4_repo','obf4_reinicios','obf4_edits','obf4_prog','obf4_calend','obf4_storm','obf4_restot','obf4_pend','obf4_delp','obf4_sent','obf4_cambios','obf4_progdel','obf4_cuadrillas','obf4_rolperms','obf4_restrpart','obf4_diasopen','obf4_dpdone','obf4_pddone'].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});Object.keys(localStorage).forEach(function(k){if(k.indexOf('obf4_tomb_')===0){try{localStorage.removeItem(k)}catch(e){}}})}catch(e){}}location.reload()};
+   var seg=8;var btnF=document.createElement('button');btnF.textContent='↻ Recargar la app AHORA (sola en '+seg+'s)';btnF.style.cssText='background:#1E7A46;color:#fff;border:0;border-radius:10px;padding:13px;font-weight:800;font-size:14px;margin-top:8px';btnF.onclick=fin;
+   lst.appendChild(btnF);btnF.scrollIntoView();
+   var iv=setInterval(function(){seg--;if(seg<=0){clearInterval(iv);fin()}else{btnF.textContent='↻ Recargar la app AHORA (sola en '+seg+'s)'}},1000);
   }catch(e){window._impBusy=0;linea('✗ ERROR GENERAL: '+((e&&e.message)||e),'#ff9d9d');est.textContent='error'}
- };}
+ }
+ document.getElementById('_imGoKeep').onclick=function(){ejecutar('keep')};
+ document.getElementById('_imGoWipe').onclick=function(){ejecutar('wipe')};}
 async function _backupHTMLviejo(){if(!(typeof esAdmin==='function'&&esAdmin())){if(typeof toast==='function')toast('Solo el administrador');return}
  try{if(typeof toast==='function')toast('Armando copia local… un momento');
   var src=await (await fetch('index.html?_bk='+Date.now(),{cache:'no-store'})).text();
@@ -1719,7 +1761,7 @@ function setTopSync(kind,extra){var b=$('topSync');if(!b)return;var pend=((typeo
   if(kind==='pushing'){b.className='topsync busy';b.textContent='⬆ Subiendo cambios a la base…'+(pend?(' ('+pend+')'):'');return}
   if(kind==='pulling'){b.className='topsync busy';b.textContent='⬇ Recibiendo información de la base…';return}
   b.className='topsync ok';b.textContent='✓ Conectado · información recibida de la base'+(extra?(' · '+extra):'')}
-async function syncNow(silent){if(window._tabBloqueada)return;if(typeof _logAdd==='function')_logAdd('sync',(silent?'auto':'manual')+' inicio');try{if(typeof _presenceSync==='function'&&Date.now()-_lastPres>8000){_lastPres=Date.now();_presenceSync();}}catch(_pe){}
+async function syncNow(silent){if(window._tabBloqueada)return;if(window._impBusy)return;if(typeof _logAdd==='function')_logAdd('sync',(silent?'auto':'manual')+' inicio');try{if(typeof _presenceSync==='function'&&Date.now()-_lastPres>8000){_lastPres=Date.now();_presenceSync();}}catch(_pe){}
   if(!sbReady()){updSync();setTopSync('unconfig');if(!silent)toast('Configura Supabase primero (engranaje)');return}
   if(!navigator.onLine){updSync();setTopSync('offline');if(!silent)toast('Sin conexión: se subirá al reconectar');return}
   if(syncing){if(Date.now()-(window._syncT0||0)>45000){syncing=false;if(typeof _logAdd==='function')_logAdd('sync','candado pegado >45s — destrabado')}else return}
