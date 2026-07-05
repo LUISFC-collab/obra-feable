@@ -713,7 +713,7 @@ async function _fotoPapelera(delUrl,rawFetch){try{
 /* cinturón de red: el "Solo ver"/bloqueado NO puede escribir en el servidor (salvo su registro de rol, su heartbeat de dispositivo y su solicitud de permisos) */
 (function(){var _f0=window.fetch;window.fetch=function(u,o){try{var m=((o&&o.method)||'GET').toUpperCase();
 if(window._mpFreeze&&!window._mpRestoring&&m!=='GET'&&typeof u==='string'&&typeof sbBase==='function'&&state&&state.cfg&&state.cfg.supaUrl&&u.indexOf(sbBase())===0){var okfr=(u.indexOf('/app_config')>=0)||(u.indexOf('/dispositivos')>=0);if(!okfr)return Promise.resolve(new Response(m==='POST'?'[]':'',{status:m==='POST'?201:204,headers:{'Content-Type':'application/json'}}))}
-if(window._modoPrueba&&!window._mpRestoring&&m==='DELETE'&&typeof u==='string'&&u.indexOf('/storage/v1/object/')>=0)return Promise.resolve(new Response('',{status:200,headers:{'Content-Type':'application/json'}}));
+if(window._modoPrueba&&m==='DELETE'&&typeof u==='string'&&u.indexOf('/storage/v1/object/')>=0)return Promise.resolve(new Response('',{status:200,headers:{'Content-Type':'application/json'}}));
 if(m==='DELETE'&&typeof u==='string'&&u.indexOf('/rest/v1/fotos?')>=0&&u.indexOf('fotos_borradas')<0&&!window._modoPrueba&&typeof sbBase==='function'&&state&&state.cfg&&state.cfg.supaUrl&&u.indexOf(sbBase())===0){var _au=u,_ao=o;return _fotoPapelera(_au,_f0).then(function(){return _f0(_au,_ao)}).catch(function(){return _f0(_au,_ao)})}
 if(m!=='GET'&&typeof u==='string'&&typeof sbBase==='function'&&state&&state.cfg&&state.cfg.supaUrl&&u.indexOf(sbBase())===0&&typeof miRol==='function'){var _r=miRol();if(_r==='nuevo'||_r==='bloqueado'){var okd=(u.indexOf('/roles_usuarios')>=0)||(u.indexOf('/dispositivos')>=0)||(u.indexOf('/rpc/')>=0)||(u.indexOf('/pendientes')>=0&&o&&typeof o.body==='string'&&o.body.indexOf('permiso')>=0);if(!okd){try{toast('👁 Solo visualización — no puedes cambiar nada')}catch(_e){}return Promise.resolve(new Response('[]',{status:403,headers:{'Content-Type':'application/json'}}))}}}
 /* tiempo máximo a toda llamada al servidor: si la señal se corta a mitad, el fetch NO se queda colgado para siempre (eso dejaba el sync trabado hasta reiniciar la app) */
@@ -1018,35 +1018,36 @@ async function _mpStart(){window._mpBusyProc=1;_mpProcUI('🟡 El server iniciar
   _mpApply(true,(state.user&&state.user.supervisor)||'');
  }catch(e){_mpEtaStop();var o=document.getElementById('_mpProc');if(o)o.remove();alert('❌ NO se activaron las pruebas (la base NO se tocó):\n'+(e&&e.message||e))}
  window._mpBusyProc=0}
-async function _mpEnd(){window._mpBusyProc=1;window._mpRestoring=1;_mpProcUI('📦 Restaurando la base tal como estaba…');
+async function _mpFetchR(url,opts,tries){tries=tries||3;var lastErr=null;for(var i=0;i<tries;i++){try{var r=await fetch(url,opts);if(r.ok)return r;lastErr=new Error('HTTP '+r.status)}catch(e){lastErr=e}if(i<tries-1)await new Promise(function(res){setTimeout(res,700)})}throw lastErr}
+async function _mpEnd(){if(window._mpEndRunning){if(typeof toast==='function')toast('⏳ Ya hay una restauración en curso, espera…');return}window._mpEndRunning=true;
+ try{await _mpEndBody()}finally{window._mpEndRunning=false}}
+async function _mpEndBody(){window._mpBusyProc=1;window._mpRestoring=1;_mpProcUI('📦 Restaurando la base tal como estaba…');
  try{
   _mpProcSet(2,'🧊 Congelando todos los equipos…');
-  var fz=await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({modo_prueba:false,mp_rest:true,updated_at:new Date().toISOString()})});
-  if(!fz.ok)throw new Error('no se pudo congelar (HTTP '+fz.status+')');
+  var fz=await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({modo_prueba:false,mp_rest:true,updated_at:new Date().toISOString()})});
   _mpProcSet(6,'📦 Descargando y descomprimiendo la copia…');_mpEta(6000);
   var fn='mp_snapshot.json.gz';try{fn=localStorage.getItem('obf4_mpsnapfn')||fn}catch(e){}
-  var dl=await fetch(sbBase()+'/storage/v1/object/obra-fotos/_snapshots/'+fn+'?nc='+Date.now(),{headers:sbHead()});
-  if(!dl.ok&&fn.slice(-3)==='.gz'){fn='mp_snapshot.json';dl=await fetch(sbBase()+'/storage/v1/object/obra-fotos/_snapshots/'+fn+'?nc='+Date.now(),{headers:sbHead()})}
-  if(!dl.ok)throw new Error('no encuentro la copia de seguridad (HTTP '+dl.status+')');
+  var dl;try{dl=await _mpFetchR(sbBase()+'/storage/v1/object/obra-fotos/_snapshots/'+fn+'?nc='+Date.now(),{headers:sbHead()},2)}catch(e0){if(fn.slice(-3)==='.gz'){fn='mp_snapshot.json';dl=await _mpFetchR(sbBase()+'/storage/v1/object/obra-fotos/_snapshots/'+fn+'?nc='+Date.now(),{headers:sbHead()},2)}else throw e0}
   var blob=await dl.blob();var raw=(fn.slice(-3)==='.gz')?await _mpUngz(blob):await blob.text();if(!raw)raw=await blob.text();
   var snap=JSON.parse(raw);if(!snap||!snap.tablas)throw new Error('copia dañada');
-  var t0=Date.now(),n=_MP_TABLAS.length;
+  var t0=Date.now(),n=_MP_TABLAS.length,fallos=[];
   for(var i=0;i<n;i++){var tb=_MP_TABLAS[i];var rows=snap.tablas[tb]||[];var pk=_impPk(tb)||'id';var pk0=pk.split(',')[0];
    _mpProcSet(8+i/n*86,'♻️ Restaurando '+tb+' ('+(i+1)+'/'+n+') — '+rows.length+' fila(s)');
    if(i>0)_mpEta(((Date.now()-t0)/i)*(n-i)+3000);
-   var del=await fetch(sbBase()+'/rest/v1/'+tb+'?'+pk0+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
-   if(!del.ok)throw new Error('limpiando '+tb+' HTTP '+del.status);
-   for(var c=0;c<rows.length;c+=200){var lote=rows.slice(c,c+200);
-    var ins=await fetch(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(lote)});
-    if(!ins.ok)throw new Error('reinsertando '+tb+' HTTP '+ins.status)}}
+   try{
+    await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?'+pk0+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
+    for(var c=0;c<rows.length;c+=200){var lote=rows.slice(c,c+200);
+     await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(lote)})}
+   }catch(eTab){fallos.push(tb+': '+((eTab&&eTab.message)||eTab))}}
+  if(fallos.length){throw new Error('⚠ '+fallos.length+' tabla(s) NO se pudieron restaurar (el resto SÍ quedó bien):\n'+fallos.join('\n')+'\n\nLa base sigue CONGELADA — reintenta para completar solo lo que falló (es seguro, no duplica nada).')}
   _mpEtaStop();_mpProcSet(96,'📢 Reiniciando todos los equipos…');
-  await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
+  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
   try{await fetch(sbBase()+'/rest/v1/dispositivos?device_id=neq.'+encodeURIComponent(deviceId()),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'debug',cmd_ts:Date.now(),updated_at:new Date().toISOString()})})}catch(e){}
   window._modoPrueba=false;try{localStorage.setItem('obf4_modoprueba','')}catch(e){}try{localStorage.removeItem('obf4_mpbackup')}catch(e){}
   _mpProcSet(100,'✅ Base restaurada TAL COMO ESTABA. Este equipo también se reiniciará…');
   setTimeout(function(){window._mpRestoring=0;window._mpBusyProc=0;if(typeof _debugReset==='function')_debugReset(true);else location.reload()},2200);
  }catch(e){_mpEtaStop();window._mpRestoring=0;window._mpBusyProc=0;var o=document.getElementById('_mpProc');if(o)o.remove();
-  if(confirm('❌ Error restaurando: '+(e&&e.message||e)+'\n\nLA COPIA SIGUE GUARDADA en el server — no se perdió nada.\n\n¿REINTENTAR la restauración ahora?')){_mpEnd();return}
+  if(confirm('❌ Error restaurando: '+(e&&e.message||e)+'\n\nLA COPIA SIGUE GUARDADA en el server — no se perdió nada.\n\n¿REINTENTAR la restauración ahora?')){return _mpEndBody()}
   alert('Quedó pendiente: vuelve a tocar el botón del MODO PRUEBAS para reintentar.')}}
 function _mpToggle(){if(!(typeof esAdminReal==='function'&&esAdminReal())){toast('Solo el administrador');return}
  if(window._mpBusyProc){toast('⏳ Ya hay un proceso en marcha, espera…');return}
@@ -1325,7 +1326,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b54';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b55';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
