@@ -1114,9 +1114,11 @@ async function _restoreFromBackup(path,etiqueta){
     for(var c=0;c<rows.length;c+=200){await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_rePri(rows.slice(c,c+200)))})}
    }catch(eT){fallos.push(tb)}}
   if(fallos.length)throw new Error('No se pudieron restaurar: '+fallos.join(', ')+' (la base sigue congelada; reintenta)');
-  _mpProcSet(96,'📢 Reiniciando los equipos…');
-  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
+  _mpProcSet(95,'📢 Avisando a los equipos que borren su copia local…');
+  /* mpwipe ANTES de descongelar + espera 18s: si no, una pestaña con datos viejos en memoria los re-sube al descongelar */
   try{await fetch(sbBase()+'/rest/v1/dispositivos?device_id=neq.'+encodeURIComponent(deviceId()),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'mpwipe',cmd_ts:Date.now(),updated_at:new Date().toISOString()})})}catch(e){}
+  for(var _rwc=18;_rwc>0;_rwc--){_mpProcSet(95+(18-_rwc)/18*3,'📢 Esperando a que los equipos borren su copia local… ('+_rwc+'s)');await new Promise(function(_r){setTimeout(_r,1000)});}
+  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
   _mpProcSet(100,'✅ Restaurado a la copia '+etiqueta+'. Reiniciando este equipo…');
   setTimeout(function(){window._mpRestoring=0;window._mpBusyProc=0;if(typeof _mpLocalWipe==='function')_mpLocalWipe();else location.reload()},2000);
  }catch(e){window._mpRestoring=0;window._mpBusyProc=0;var o=document.getElementById('_mpProc');if(o)o.remove();
@@ -1487,7 +1489,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b67';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
+var APP_VER='v20260705b68';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
