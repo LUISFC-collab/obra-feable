@@ -897,15 +897,17 @@ function _pullCuadrillas(){try{if(!sbReady()||!navigator.onLine)return;fetch(sbB
 setTimeout(_pullCuadrillas,2500);setInterval(_pullCuadrillas,30000);
 /* ================= PANEL DE CONFIGURACIÓN (Admin): permisos por rol + MODO PRUEBAS ================= */
 var PERMS_GRUPOS=[
- {g:'📋 Avances y fotos (tarjeta de actividad)',items:[['av_reportar','Reportar avance del día'],['av_fotos_subir','Subir fotos'],['av_fotos_borrar','Borrar fotos'],['av_obs','Escribir observaciones'],['av_restr_int','Reportar restricción interna'],['av_restr_mina','Reportar restricción de mina']]},
- {g:'🗂 Edición de actividades (menú Activity)',items:[['act_crear','Crear actividad nueva'],['act_renombrar','Corregir nombre de actividad'],['act_editar','Modificar datos de la tarjeta'],['act_eliminar','Pedir eliminar actividad'],['act_reset0','Pedir poner avance en 0'],['act_mod_carga','Pedir modificar una carga'],['act_borrar_carga','Pedir borrar una carga'],['act_fecha_carga','Pedir cambiar fecha de una carga']]},
- {g:'⚙ Metrados / UND',items:[['met_definir','Definir UND y metrado'],['met_cambiar','Cambiar UND/metrado (solicitud)']]},
- {g:'📅 Cronograma / programación',items:[['prog_programar','Programarse en el cronograma'],['prog_cambiar','Cambiar programación existente']]},
- {g:'👷 Cuadrillas',items:[['cuad_definir','Definir / modificar cuadrillas']]},
- {g:'⛈ Reportes de urgencia',items:[['rep_tormenta','Reportar tormenta eléctrica'],['rep_restot','Reportar restricción total']]},
- {g:'📨 Pendientes / Solicitudes',items:[['pend_crear','Enviar solicitudes'],['pend_responder','Responder / aprobar solicitudes']]},
- {g:'🔧 Especialidades que puede cambiar',items:[['esp_Mecánica','Mecánica'],['esp_Eléctrica','Eléctrica'],['esp_Civil','Civil']]}
+ {g:'📋 Avances y fotos (tarjeta de actividad)',items:[['av_reportar','📈 Reportar avance del día'],['av_fotos_subir','📷 Subir fotos'],['av_fotos_borrar','🗑 Borrar fotos'],['av_obs','📝 Escribir observaciones'],['av_restr_int','⚠ Reportar restricción interna'],['av_restr_mina','⛏ Reportar restricción de mina']]},
+ {g:'🗂 Edición de actividades (menú ⚙ de la cartilla)',items:[['act_crear','➕ Crear actividad nueva'],['act_renombrar','✏️ Corregir nombre de actividad'],['act_editar','⚙ Modificar datos de la tarjeta'],['act_eliminar','🗑 Pedir eliminar actividad'],['act_reset0','↺ Pedir poner avance en 0'],['act_mod_carga','✎ Pedir modificar una carga'],['act_borrar_carga','✕ Pedir borrar una carga'],['act_fecha_carga','📅 Pedir cambiar fecha de una carga']]},
+ {g:'⚙ Metrados / UND',items:[['met_definir','📊 Definir UND y metrado'],['met_cambiar','🔁 Cambiar UND/metrado (solicitud)']]},
+ {g:'📅 Cronograma / programación',items:[['prog_programar','🗓 Programarse en el cronograma'],['prog_cambiar','🗓 Cambiar programación existente']]},
+ {g:'👷 Cuadrillas',items:[['cuad_definir','👷 Definir / modificar cuadrillas']]},
+ {g:'⛈ Reportes de urgencia',items:[['rep_tormenta','🌩 Reportar tormenta eléctrica'],['rep_restot','⛔ Reportar restricción total']]},
+ {g:'📨 Pendientes / Solicitudes',items:[['pend_crear','📨 Enviar solicitudes'],['pend_responder','✅ Responder / aprobar solicitudes']]},
+ {g:'🔧 Especialidades que puede cambiar',items:[['esp_Mecánica','🔧 Mecánica'],['esp_Eléctrica','⚡ Eléctrica'],['esp_Civil','🧱 Civil']]}
 ];
+/* llaves con puerta REAL cableada en el código (las demás salen con "(pronto)") */
+var PERMS_WIRED=['av_reportar','av_fotos_subir','av_fotos_borrar','av_obs','act_crear','act_renombrar','act_eliminar','act_mod_carga','act_borrar_carga','act_fecha_carga','cuad_definir','rep_tormenta','rep_restot'];
 var KRP='obf4_rolperms';try{if(!state.rolperms)state.rolperms=store.get(KRP)||{}}catch(e){state.rolperms={}}
 function _pullPerms(){try{if(!sbReady()||!navigator.onLine)return;fetch(sbBase()+'/rest/v1/roles_permisos?select=*&order=orden&limit=200',{headers:sbHead()}).then(function(r){return r.ok?r.json():null}).then(function(rows){if(!rows)return;var m={};rows.forEach(function(x){if(x&&x.rol)m[x.rol]=x});state.rolperms=m;store.set(KRP,m)}).catch(function(){})}catch(e){}}
 setTimeout(_pullPerms,2600);setInterval(_pullPerms,30000);
@@ -964,21 +966,26 @@ function _showConfig(){
  function updSaveBtn(){var b=document.getElementById('_cfgSave');var n=Object.keys(dirty).length;if(b){b.textContent='💾 Guardar permisos ('+n+')';b.disabled=!n;b.style.opacity=n?'1':'.45'}}
  function draw(){
   var roles=rolesOrd();var B=document.getElementById('_cfgBody');var H='';
+  var _cv={};try{_cv=JSON.parse(localStorage.getItem('obf4_cfgcols')||'{}')}catch(_cve){}
   /* MODO PRUEBAS */
   H+='<div style="border:2px solid '+(window._modoPrueba?'#FFD100':'#7A1A1A')+';border-radius:12px;padding:12px;margin-bottom:12px;background:'+(window._modoPrueba?'#3a3000':'#1a0d0d')+'">'
    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="color:#fff;font-size:14px">🧪 MODO PRUEBAS del servidor</b><span style="color:#9db4d6;font-size:12px">todo se ve real, pero NINGÚN cambio cuenta (solo en este equipo)</span></div>'
    +'<button id="_cfgMP" style="margin-top:10px;width:100%;border:0;border-radius:10px;padding:13px;font-weight:900;font-size:14.5px;cursor:pointer;background:'+(window._modoPrueba?'#FFD100':'#C81E1E')+';color:'+(window._modoPrueba?'#231A00':'#fff')+'">'+(window._modoPrueba?'⚠️ FINALIZAR MODO PRUEBAS y volver a lo real':'🔴 ACTIVAR MODO PRUEBAS')+'</button></div>';
   /* ROLES */
   H+='<div style="border:1px solid #243a5e;border-radius:12px;padding:12px;margin-bottom:12px;background:#101a30"><b style="color:#fff;font-size:14px">👥 Roles</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">';
-  roles.forEach(function(r){H+='<span style="display:inline-flex;align-items:center;gap:6px;background:'+(r.fijo?'#1d2c47':'#33406a')+';border-radius:999px;padding:6px 12px;font-weight:800;color:#fff">'+esc(r.nombre||r.rol)+(r.fijo?' 🔒':'<button data-delrol="'+esc(r.rol)+'" style="background:#7A1A1A;color:#fff;border:0;border-radius:50%;width:20px;height:20px;line-height:1;font-weight:900;cursor:pointer">×</button>')+'</span>'});
+  roles.forEach(function(r){H+='<span style="display:inline-flex;align-items:center;gap:6px;background:'+(r.fijo?'#1d2c47':'#33406a')+';border-radius:999px;padding:6px 12px;font-weight:800;color:#fff"><input type="checkbox" class="_cfgColVis" data-rol="'+esc(r.rol)+'" '+(_cv[r.rol]!==0?'checked':'')+' title="Mostrar su columna en los cuadros" style="width:15px;height:15px;accent-color:#1f6feb;cursor:pointer">'+esc(r.nombre||r.rol)+(r.fijo?' 🔒':'<button data-delrol="'+esc(r.rol)+'" style="background:#7A1A1A;color:#fff;border:0;border-radius:50%;width:20px;height:20px;line-height:1;font-weight:900;cursor:pointer">×</button>')+'</span>'});
+  H+='<div style="flex-basis:100%;font-size:11px;color:#9db4d6;margin-top:2px">☑ del chip = esa columna sale en los cuadros de abajo</div>';
   H+='</div><div style="display:flex;gap:8px;margin-top:10px"><input id="_cfgNewRol" placeholder="Nombre del rol nuevo (ej. Practicante)…" style="flex:1;padding:9px;border-radius:8px;border:1px solid #30363d;background:#0d1117;color:#fff;box-sizing:border-box"><button id="_cfgAddRol" style="background:#1f6feb;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:800">＋ Crear rol</button></div><div id="_cfgRolMsg" style="margin-top:6px;font-weight:800;min-height:16px;font-size:12px"></div></div>';
   /* MATRIZ */
-  var th='<tr><th style="text-align:left;padding:7px 8px;color:#9db4d6;font-size:11.5px;position:sticky;left:0;background:#101a30">Acceso</th>'+roles.map(function(r){return '<th style="padding:7px 6px;color:'+(r.fijo?'#7d8590':'#fff')+';font-size:11.5px;min-width:62px;text-align:center">'+esc(r.nombre||r.rol)+(r.fijo?'<br>🔒':'')+'</th>'}).join('')+'</tr>';
+  /* columnas visibles + Administrador y Solo ver SIEMPRE al final (derecha) */
+  var rolesTabla=roles.filter(function(r){return _cv[r.rol]!==0});
+  rolesTabla.sort(function(a,b){function w(x){return x.rol==='admin'?1:(x.fijo?2:0)}return w(a)-w(b)||((a.orden||50)-(b.orden||50))});
+  var th='<tr><th style="text-align:left;padding:7px 8px;color:#9db4d6;font-size:11.5px;position:sticky;left:0;background:#101a30">Acceso</th>'+rolesTabla.map(function(r){return '<th style="padding:7px 6px;color:'+(r.fijo?'#7d8590':'#fff')+';font-size:11.5px;min-width:62px;text-align:center">'+esc(r.nombre||r.rol)+(r.fijo?'<br>🔒':'')+'</th>'}).join('')+'</tr>';
   PERMS_GRUPOS.forEach(function(gr){
    H+='<div style="border:1px solid #243a5e;border-radius:12px;padding:10px;margin-bottom:10px;background:#101a30"><b style="color:#fff;font-size:13.5px">'+gr.g+'</b><div style="overflow-x:auto;margin-top:6px"><table style="border-collapse:collapse;width:100%">'+th;
    gr.items.forEach(function(it){
-    H+='<tr style="border-top:1px solid #1d2c47"><td style="padding:7px 8px;color:#cfe3ff;font-size:12.5px;position:sticky;left:0;background:#101a30;min-width:170px">'+esc(it[1])+'</td>';
-    roles.forEach(function(r){
+    H+='<tr style="border-top:1px solid #1d2c47"><td style="padding:7px 8px;color:#cfe3ff;font-size:12.5px;position:sticky;left:0;background:#101a30;min-width:170px">'+esc(it[1])+(PERMS_WIRED.indexOf(it[0])>=0?'':' <span style="color:#e8cf8a;font-size:9.5px;font-weight:800">(pronto)</span>')+'</td>';
+    rolesTabla.forEach(function(r){
      var on=valDe(r,it[0]);var lock=!!r.fijo;
      if(lock){H+='<td style="text-align:center;padding:6px"><span style="opacity:.55;font-size:15px">'+(r.rol==='admin'?'✅':'⛔')+'</span></td>';}
      else{H+='<td style="text-align:center;padding:6px"><button data-rol="'+esc(r.rol)+'" data-key="'+esc(it[0])+'" style="width:26px;height:26px;border-radius:50%;border:2px solid '+(on?'#1E7A46':'#C81E1E')+';background:'+(on?'#1E7A46':'transparent')+';color:#fff;font-weight:900;font-size:13px;cursor:pointer;line-height:1">'+(on?'✓':'<span style=\'color:#C81E1E\'>●</span>')+'</button></td>';}
@@ -989,6 +996,7 @@ function _showConfig(){
   });
   B.innerHTML=H;
   Array.prototype.forEach.call(B.querySelectorAll('button[data-rol][data-key]'),function(b){b.onclick=function(){var rol=b.getAttribute('data-rol'),key=b.getAttribute('data-key');var r=state.rolperms[rol];if(!r)return;var cur=valDe(r,key);dirty[rol]=dirty[rol]||{};try{Object.assign(dirty[rol],{},dirty[rol])}catch(e){}dirty[rol][key]=!cur;updSaveBtn();draw()}});
+  Array.prototype.forEach.call(B.querySelectorAll('._cfgColVis'),function(c){c.onchange=function(){var cv={};try{cv=JSON.parse(localStorage.getItem('obf4_cfgcols')||'{}')}catch(e){}cv[c.getAttribute('data-rol')]=c.checked?1:0;try{localStorage.setItem('obf4_cfgcols',JSON.stringify(cv))}catch(e){}draw()}});
   Array.prototype.forEach.call(B.querySelectorAll('button[data-delrol]'),function(b){b.onclick=async function(){var rol=b.getAttribute('data-delrol');var msg=document.getElementById('_cfgRolMsg');var enUso=0;try{Object.keys(state.roles||{}).forEach(function(n){if((state.roles[n]||{}).rol===rol)enUso++})}catch(e){}
    if(enUso){if(msg){msg.textContent='⚠ No se puede borrar: '+enUso+' usuario(s) tienen ese rol. Cámbialos primero en Roles y accesos.';msg.style.color='#FFD27A'}return}
    if(!confirm('¿Borrar el rol "'+rol+'"?'))return;
@@ -1202,7 +1210,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b43';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b44';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
