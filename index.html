@@ -1097,6 +1097,15 @@ async function _autoBackupTick(){try{
 try{setTimeout(_autoBackupTick,25000);setInterval(_autoBackupTick,60000)}catch(e){}
 async function _bkListDias(){try{var r=await fetch(sbBase()+'/storage/v1/object/list/obra-fotos',{method:'POST',headers:sbHead({'Content-Type':'application/json'}),body:JSON.stringify({prefix:'_backups/',limit:1000,sortBy:{column:'name',order:'desc'}})});var j=await r.json();return (j||[]).filter(function(x){return x&&x.name&&x.id===null}).map(function(x){return x.name})}catch(e){return[]}}
 async function _bkListHoras(dia){try{var r=await fetch(sbBase()+'/storage/v1/object/list/obra-fotos',{method:'POST',headers:sbHead({'Content-Type':'application/json'}),body:JSON.stringify({prefix:'_backups/'+dia+'/',limit:1000,sortBy:{column:'name',order:'desc'}})});var j=await r.json();return (j||[]).filter(function(x){return x&&x.name&&x.id!==null}).map(function(x){return {name:x.name,size:(x.metadata&&x.metadata.size)||0}})}catch(e){return[]}}
+async function _listAllFotos(){var out=[];
+ async function walk(pfx){var off=0;
+  for(;;){var r;try{r=await fetch(sbBase()+'/storage/v1/object/list/'+FOTO_BUCKET,{method:'POST',headers:sbHead({'Content-Type':'application/json'}),body:JSON.stringify({prefix:pfx,limit:1000,offset:off,sortBy:{column:'name',order:'asc'}})})}catch(e){break}
+   if(!r.ok)break;var arr;try{arr=await r.json()}catch(e){break}if(!Array.isArray(arr)||!arr.length)break;
+   for(var i=0;i<arr.length;i++){var it=arr[i];if(!it||!it.name)continue;var full=pfx+it.name;
+    if(full.indexOf('_backups')===0||full.indexOf('_snapshots')===0)continue;
+    if(it.id===null){await walk(full+'/')}else{out.push({path:full,size:(it.metadata&&it.metadata.size)||0})}}
+   if(arr.length<1000)break;off+=1000}}
+ await walk('');return out;}
 async function _restoreFromBackup(path,etiqueta){
  window._mpBusyProc=1;window._mpRestoring=1;_mpProcUI('📦 Restaurando desde la copia '+etiqueta+'…');
  try{
@@ -1493,7 +1502,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b73';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
+var APP_VER='v20260705b75';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -1799,13 +1808,18 @@ async function _backup(){
    linea('✓ tabla '+t+': '+rows.length+' filas · '+_kb(js.length),'#7fd7a5');
   }catch(e){tablasErr.push(t+' ('+((e&&e.message)||e)+')');linea('✗ tabla '+t+': ERROR '+((e&&e.message)||e),'#ff9d9d')}}
  files.push({name:'db/PROYECTO_COMPLETO.json',data:enc.encode(JSON.stringify(db))});
- /* 2) TODAS LAS FOTOS (binarios desde el Storage) */
- var fRows=db.fotos||[];var okF=0,failF=0,bytesF=0,fotosFall=[];
- for(var fi=0;fi<fRows.length;fi++){var f=fRows[fi];est.textContent='foto '+(fi+1)+'/'+fRows.length+'…';
-  var fname=(f.path?String(f.path).split('/').pop():(f.foto_id+'.jpg'));var okd=false,sz=0;
-  try{var pr=await fetch(f.url);if(pr.ok){var ab=await pr.arrayBuffer();if(ab.byteLength>0){files.push({name:'fotos/'+(f.path||fname),data:new Uint8Array(ab)});sz=ab.byteLength;okd=true}}}catch(e){}
-  if(okd){okF++;bytesF+=sz;linea('✓ foto '+okF+'/'+fRows.length+' ['+(f.partida_id||'?')+'] '+(f.fecha||'?')+' · '+fname+' · '+_kb(sz),'#7fd7a5')}
-  else{failF++;fotosFall.push('['+(f.partida_id||'?')+'] '+(f.fecha||'?')+' '+fname);linea('✗ foto ['+(f.partida_id||'?')+'] '+fname+' NO DESCARGÓ','#ff9d9d')}}
+ /* 2) TODAS LAS FOTOS del bucket (asignadas o NO) — con verificación de integridad (tamaño real vs esperado) */
+ est.textContent='listando TODAS las fotos del servidor…';
+ var fRows=db.fotos||[];var _asig={};fRows.forEach(function(f){if(f.path)_asig[f.path]=1});
+ var _allF=[];try{_allF=await _listAllFotos()}catch(e){linea('✗ No se pudo listar el storage: '+((e&&e.message)||e),'#ff9d9d')}
+ linea('✓ '+_allF.length+' archivos de foto en el bucket ('+Object.keys(_asig).length+' con registro asignado)','#7fd7a5');
+ var okF=0,failF=0,bytesF=0,fotosFall=[],nHuerf=0,okHuerf=0,intMal=0;
+ for(var fi=0;fi<_allF.length;fi++){var ff=_allF[fi];var esA=!!_asig[ff.path];if(!esA)nHuerf++;est.textContent='foto '+(fi+1)+'/'+_allF.length+(esA?'':' (sin asignar)')+'…';
+  var fname=String(ff.path).split('/').pop();var okd=false,sz=0;
+  try{var pr=await fetch(fotoPublicUrl(ff.path)+'?_bk='+Date.now(),{cache:'no-store'});if(pr.ok){var ab=await pr.arrayBuffer();sz=ab.byteLength;
+   if(sz>0){files.push({name:'fotos/'+ff.path,data:new Uint8Array(ab)});okd=true;if(ff.size&&Math.abs(sz-ff.size)>4){intMal++;linea('⚠ integridad '+fname+': bajó '+_kb(sz)+' vs '+_kb(ff.size)+' esperado','#FFD27A')}}}}catch(e){}
+  if(okd){okF++;bytesF+=sz;if(!esA)okHuerf++;linea('✓ foto '+okF+'/'+_allF.length+' '+fname+(esA?'':' · 🟠 SIN asignar')+' · '+_kb(sz),'#7fd7a5')}
+  else{failF++;fotosFall.push(fname+(esA?'':' (sin asignar)'));linea('✗ foto '+fname+' NO DESCARGÓ','#ff9d9d')}}
  /* 3) INFO DEL EQUIPO (lo que vive en este teléfono/PC, aparte de la base) */
  var seed={},nK=0,lsBytes=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||k.indexOf('obf4_')!==0)continue;var v=localStorage.getItem(k);if(v==null)continue;seed[k]=v;nK++;lsBytes+=v.length}}catch(e){}
  files.push({name:'dispositivo/localStorage.json',data:enc.encode(JSON.stringify(seed))});
@@ -1822,33 +1836,33 @@ async function _backup(){
    linea('✓ página sin conexión incluida ('+_kb(htmlBytes)+')','#7fd7a5');}}catch(e){linea('✗ página sin conexión: no se pudo armar','#ff9d9d')}
  /* 5) REGISTRO + MANIFIESTO */
  var hoy=new Date();var sello=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0')+' '+String(hoy.getHours()).padStart(2,'0')+':'+String(hoy.getMinutes()).padStart(2,'0');
- var todoOk=(tablasErr.length===0&&failF===0);var chip=todoOk?'✅':'⚠️';
+ var todoOk=(tablasErr.length===0&&failF===0&&intMal===0);var chip=todoOk?'✅':'⚠️';
  var regTxt='REGISTRO DE BACKUP TOTAL — '+DATA.proyecto+'\n'
   +'Realizado: '+sello+' · por: '+((state.user&&state.user.supervisor)||'admin')+' · versión app: '+(typeof APP_VER!=='undefined'?APP_VER:'?')+'\n'
   +'Servidor (base de datos): '+sbBase()+' · bucket de fotos: obra-fotos\n'
-  +'RESULTADO: '+chip+' tablas '+tablasOk+'/'+TABLAS.length+' · fotos '+okF+'/'+fRows.length+' · '+filasTot+' filas · datos '+_kb(dbBytes)+' + fotos '+_kb(bytesF)+'\n\n'
+  +'RESULTADO: '+chip+' tablas '+tablasOk+'/'+TABLAS.length+' · fotos '+okF+'/'+_allF.length+' · '+filasTot+' filas · datos '+_kb(dbBytes)+' + fotos '+_kb(bytesF)+'\n\n'
   +'1) DESDE LA BASE DE DATOS (pedido al servidor en este momento):\n'
   +TABLAS.map(function(t){return db[t]?('  ✓ '+t+': '+db[t].length+' filas'):('  ✗ '+t+': ERROR')}).join('\n')
   +'\n  TOTAL FILAS: '+filasTot+' · peso datos: '+_kb(dbBytes)
   +(tablasErr.length?('\n  ⚠ tablas con error: '+tablasErr.join(' · ')):'')+'\n\n'
-  +'2) DESDE EL STORAGE (imágenes reales):\n  '+chip+' '+okF+'/'+fRows.length+' fotos descargadas · peso: '+_kb(bytesF)
+  +'2) DESDE EL STORAGE (TODOS los archivos del bucket, asignados o no):\n  '+chip+' '+okF+'/'+_allF.length+' fotos descargadas · '+nHuerf+' sin asignar · integridad dudosa: '+intMal+' · peso: '+_kb(bytesF)
   +(fotosFall.length?('\n  ✗ fallaron: '+fotosFall.join(' · ')):'')+'\n\n'
   +'3) DESDE ESTE EQUIPO (información local, no de la base):\n  ✓ '+nK+' claves guardadas en el dispositivo ('+_kb(lsBytes)+') · cambios pendientes de subir: '+pendN+'\n\n'
   +'4) PÁGINA SIN CONEXIÓN:\n  '+(htmlOk?('✓ incluida ('+_kb(htmlBytes)+') — abre pagina_sin_conexion.html en cualquier navegador y verás el proyecto SIN necesidad de base'):'✗ no se pudo incluir')+'\n\n'
   +'CONTENIDO DEL ZIP:\n  db/tablas/*.json (una por tabla) · db/PROYECTO_COMPLETO.json (todo junto) · fotos/ (imágenes con su carpeta original) · dispositivo/localStorage.json · pagina_sin_conexion.html · manifiesto.json · este REGISTRO.txt\n\n'
   +'SI LA BASE SE PIERDE: con este ZIP se restaura TODO — las tablas se re-suben por REST desde db/tablas/*.json, las fotos al bucket obra-fotos respetando su carpeta (campo path), y la tabla fotos debe apuntar url = SERVIDOR/storage/v1/object/public/obra-fotos/PATH. Mientras tanto, pagina_sin_conexion.html permite seguir viendo el proyecto.\n';
- var manif={tipo:'BACKUP_TOTAL',realizado:sello,por:(state.user&&state.user.supervisor)||'admin',version_app:(typeof APP_VER!=='undefined'?APP_VER:'?'),servidor:sbBase(),bucket:'obra-fotos',proyecto:DATA.proyecto,tablas:TABLAS.map(function(t){return {tabla:t,filas:db[t]?db[t].length:null,ok:!!db[t]}}),total_filas:filasTot,peso_datos_bytes:dbBytes,fotos_total:fRows.length,fotos_descargadas:okF,fotos_fallidas:failF,peso_fotos_bytes:bytesF,claves_equipo:nK,pendientes_equipo:pendN,pagina_sin_conexion:htmlOk};
+ var manif={tipo:'BACKUP_TOTAL',realizado:sello,por:(state.user&&state.user.supervisor)||'admin',version_app:(typeof APP_VER!=='undefined'?APP_VER:'?'),servidor:sbBase(),bucket:'obra-fotos',proyecto:DATA.proyecto,tablas:TABLAS.map(function(t){return {tabla:t,filas:db[t]?db[t].length:null,ok:!!db[t]}}),total_filas:filasTot,peso_datos_bytes:dbBytes,fotos_total:_allF.length,fotos_con_registro:Object.keys(_asig).length,fotos_sin_asignar:nHuerf,fotos_descargadas:okF,fotos_fallidas:failF,integridad_dudosa:intMal,peso_fotos_bytes:bytesF,claves_equipo:nK,pendientes_equipo:pendN,pagina_sin_conexion:htmlOk};
  files.push({name:'REGISTRO.txt',data:enc.encode(regTxt)});
  files.push({name:'manifiesto.json',data:enc.encode(JSON.stringify(manif,null,1))});
  est.textContent=chip+' backup listo';
- res.innerHTML='<div style="font-size:20px;font-weight:900;color:'+(todoOk?'#7fd7a5':'#FFD27A')+'">'+chip+' Tablas '+tablasOk+'/'+TABLAS.length+' · Fotos '+okF+'/'+fRows.length+'</div><div style="margin-top:4px;color:#9db4d6">'+filasTot+' filas de la base · datos '+_kb(dbBytes)+' · fotos '+_kb(bytesF)+' · equipo '+nK+' claves ('+_kb(lsBytes)+')'+(htmlOk?' · página sin conexión ✓':'')+'</div>'+(tablasErr.length||failF?('<div style="margin-top:2px;color:#ff9d9d">Errores: '+tablasErr.concat(fotosFall).join(' · ').slice(0,200)+'</div>'):'');
+ res.innerHTML='<div style="font-size:20px;font-weight:900;color:'+(todoOk?'#7fd7a5':'#FFD27A')+'">'+chip+' Tablas '+tablasOk+'/'+TABLAS.length+' · Fotos '+okF+'/'+_allF.length+(nHuerf?(' ('+nHuerf+' sin asignar)'):'')+'</div><div style="margin-top:4px;color:#9db4d6">'+filasTot+' filas de la base · datos '+_kb(dbBytes)+' · fotos '+_kb(bytesF)+' · equipo '+nK+' claves ('+_kb(lsBytes)+')'+(htmlOk?' · página sin conexión ✓':'')+'</div>'+(tablasErr.length||failF?('<div style="margin-top:2px;color:#ff9d9d">Errores: '+tablasErr.concat(fotosFall).join(' · ').slice(0,200)+'</div>'):'');
  var stamp=sello.replace(/[: ]/g,'-');
  var bz=document.getElementById('_bkZip'),br=document.getElementById('_bkReg');
  bz.disabled=false;bz.style.opacity='1';br.disabled=false;br.style.opacity='1';
  bz.onclick=function(){try{var blob=_zipStore(files);_dlBlob(blob,'BACKUP TOTAL '+DATA.proyecto.split('·')[0].trim()+' '+stamp+'.zip');toast('💾 BACKUP COMPLETO descargado ('+_kb(blob.size)+')')}catch(e){toast('Error armando ZIP: '+e)}};
  br.onclick=function(){_dlBlob(new Blob([regTxt],{type:'text/plain;charset=utf-8'}),'REGISTRO backup '+stamp+'.txt');toast('📄 Registro descargado')};
- window._bkInfo={tablas_ok:tablasOk,tablas_total:TABLAS.length,filas:filasTot,fotos_ok:okF,fotos_total:fRows.length,bytes_db:dbBytes,bytes_fotos:bytesF,html:htmlOk,errores:tablasErr.length+failF};
- try{var _bf=TABLAS.map(function(_t){return db[_t]?{tabla:_t,ok:db[_t].length,total:db[_t].length}:{tabla:_t,ok:0,total:0,err:true,nota:'no se pudo leer'}});_bf.push({tabla:'fotos (archivos)',ok:okF,total:fRows.length});_cartillaIO((tablasErr.length||failF)?'Backup total \u2014 con avisos':'Backup total listo','Esto tiene la copia \u00b7 '+filasTot+' filas \u00b7 desc\u00e1rgala con el bot\u00f3n verde',_bf,'La copia NO se guarda sola: desc\u00e1rgala y gu\u00e1rdala en un lugar seguro.','Cerrar');}catch(_ce){}
+ window._bkInfo={tablas_ok:tablasOk,tablas_total:TABLAS.length,filas:filasTot,fotos_ok:okF,fotos_total:_allF.length,fotos_sin_asignar:nHuerf,integridad_dudosa:intMal,bytes_db:dbBytes,bytes_fotos:bytesF,html:htmlOk,errores:tablasErr.length+failF};
+ try{var _bf=TABLAS.map(function(_t){return db[_t]?{tabla:_t,ok:db[_t].length,total:db[_t].length}:{tabla:_t,ok:0,total:0,err:true,nota:'no se pudo leer'}});_bf.push({tabla:'fotos (archivos)',ok:okF,total:_allF.length,nota:((nHuerf?(nHuerf+' sin asignar incluidas'):'')+(intMal?((nHuerf?' · ':'')+intMal+' con integridad dudosa'):''))||undefined});_cartillaIO((tablasErr.length||failF)?'Backup total \u2014 con avisos':'Backup total listo','Esto tiene la copia \u00b7 '+filasTot+' filas \u00b7 desc\u00e1rgala con el bot\u00f3n verde',_bf,'La copia NO se guarda sola: desc\u00e1rgala y gu\u00e1rdala en un lugar seguro.','Cerrar');}catch(_ce){}
 }
 /* === 📥 RESTAURAR BACKUP (admin): lee el ZIP del "Backup TOTAL" (o la carpeta descomprimida) y deja el servidor EXACTAMENTE como esa copia === */
 function _impPk(t){return ({metrados:'proyecto,partida_id',partes:'client_id',fotos:'foto_id',programacion:'proyecto,partida_id',borrados:'client_id',pendientes:'id',cambios:'id',conflictos:'id',nuevas:'proyecto,partida_id',calendario:'proyecto,fecha',restricciones_partida:'partida_id',dias_habilitados:'proyecto,fecha',bitacora:'nombre,dia',ediciones:'proyecto,partida_id',reinicios:'rid',reportabilidad:'rid',restricciones_generales:'id',tormenta:'id',roles_usuarios:'nombre',cuadrillas:'id',roles_permisos:'rol',fotos_borradas:'id',avance_semana:'proyecto,semana_id,partida_id',metas_semana:'proyecto,semana_id,partida_id',prog_semana:'proyecto,semana_id,partida_id',razones_noavance:'proyecto,semana_id,partida_id,fecha',semanas:'proyecto,semana_id',interf_log:'id',presencia_lapsos:'id'})[t]||null}
@@ -1934,13 +1948,18 @@ async function _importBackup(){
      }
     }catch(e){linea('⚠ No se pudo comparar para lápidas: '+((e&&e.message)||e)+' — sigo igual','#FFD27A')}
    }
-   /* 1) FOTOS al almacenamiento (primero, para que las URLs existan cuando lleguen las filas) */
-   var _fotoOk=0,_repImp=[];
+   /* 1) FOTOS al almacenamiento — SOLO las que FALTAN en el server (identificadas por su código/path). NUNCA se reemplaza una foto ya subida. */
+   var _fotoOk=0,_fotoYa=0,_repImp=[];
    for(var fi=0;fi<plan.fotos.length;fi++){var fo=plan.fotos[fi];est.textContent='foto '+(fi+1)+'/'+plan.fotos.length+'…';
-    try{var data=fo._file?new Uint8Array(await fo._file.arrayBuffer()):await _unzipData(fo._zip,fo._ent);
+    try{
+     var _ex=false;try{var _hh=await fetch(fotoPublicUrl(fo.path),{method:'HEAD',cache:'no-store'});_ex=(_hh&&_hh.ok)}catch(_he){}
+     if(_ex){_fotoYa++;linea('↷ foto '+(fi+1)+'/'+plan.fotos.length+' '+fo.path.split('/').pop()+' — YA estaba en el servidor (no se reemplaza)','#9db4d6');continue}
+     var data=fo._file?new Uint8Array(await fo._file.arrayBuffer()):await _unzipData(fo._zip,fo._ent);
      var ct=/\.png$/i.test(fo.path)?'image/png':'image/jpeg';
-     var up=await fetch(sbBase()+'/storage/v1/object/'+FOTO_BUCKET+'/'+fotoEncPath(fo.path),{method:'POST',headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey,'x-upsert':'true','Content-Type':ct},body:data});
-     if(up.ok){_fotoOk++;linea('✓ foto '+(fi+1)+'/'+plan.fotos.length+' '+fo.path.split('/').pop(),'#7fd7a5')}else{errores++;linea('✗ foto '+fo.path+' HTTP '+up.status,'#ff9d9d')}
+     var up=await fetch(sbBase()+'/storage/v1/object/'+FOTO_BUCKET+'/'+fotoEncPath(fo.path),{method:'POST',headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey,'x-upsert':'false','Content-Type':ct},body:data});
+     if(up.ok){_fotoOk++;linea('✓ foto '+(fi+1)+'/'+plan.fotos.length+' '+fo.path.split('/').pop()+' — subida (faltaba)','#7fd7a5')}
+     else if(up.status===409||up.status===400){_fotoYa++;linea('↷ foto '+fo.path.split('/').pop()+' — ya estaba (no se reemplaza)','#9db4d6')}
+     else{errores++;linea('✗ foto '+fo.path+' HTTP '+up.status,'#ff9d9d')}
     }catch(e){errores++;linea('✗ foto '+fo.path+' '+((e&&e.message)||e),'#ff9d9d')}}
    /* 2) TABLAS */
    for(var ti=0;ti<tt.length;ti++){var t=tt[ti];var rows=plan.tablas[t];est.textContent='tabla '+(ti+1)+'/'+tt.length+': '+t+'…';
@@ -1981,7 +2000,7 @@ async function _importBackup(){
    linea(errores?('⚠ Terminado con '+errores+' errores — revisa arriba'):(modo==='keep'?'✓ COPIA AGREGADA — lo nuevo quedó intacto':'✓ SERVIDOR RESTAURADO EXACTO A LA COPIA'),'#fff');
    /* recarga: en BORRAR limpia también el caché local para bajar todo fresco */
    var fin=function(){if(modo==='wipe'){try{['obf4_partes','obf4_nuevas','obf4_meta','obf4_repo','obf4_reinicios','obf4_edits','obf4_prog','obf4_calend','obf4_storm','obf4_restot','obf4_pend','obf4_delp','obf4_sent','obf4_cambios','obf4_progdel','obf4_cuadrillas','obf4_rolperms','obf4_restrpart','obf4_diasopen','obf4_dpdone','obf4_pddone'].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});Object.keys(localStorage).forEach(function(k){if(k.indexOf('obf4_tomb_')===0){try{localStorage.removeItem(k)}catch(e){}}})}catch(e){}}location.reload()};
-   try{_repImp.push({tabla:'fotos (archivos)',ok:_fotoOk,total:plan.fotos.length});}catch(_fe){}
+   try{_repImp.push({tabla:'fotos (archivos)',ok:(_fotoOk+_fotoYa),total:plan.fotos.length,nota:(_fotoYa?(_fotoOk+' subidas · '+_fotoYa+' ya estaban (no se reemplazan)'):(_fotoOk+' subidas'))});}catch(_fe){}
    _cartillaIO((errores?('Restauración — '+errores+' aviso(s)'):'Restauración completa'),'Copia: '+plan.origen+' · '+(modo==='keep'?'modo AGREGAR (no borra)':'modo EXACTO'),_repImp,'Al cerrar, la app se recarga para bajar lo restaurado.','Cerrar y recargar la app',fin);
   }catch(e){window._impBusy=0;linea('✗ ERROR GENERAL: '+((e&&e.message)||e),'#ff9d9d');est.textContent='error'}
  }
