@@ -1202,7 +1202,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b40';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b41';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -1288,7 +1288,7 @@ async function _showFotosSrv(){
  var ov=document.getElementById('_fsrvOv');if(ov)ov.remove();
  ov=document.createElement('div');ov.id='_fsrvOv';
  ov.style.cssText='position:fixed;inset:0;z-index:2147483645;background:#0b1220;color:#cfe3ff;font:13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;display:flex;flex-direction:column;padding:12px;box-sizing:border-box';
- ov.innerHTML='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><b style="font-size:15px;color:#fff">🖼 Fotos en el servidor</b><button id="_fsTab1" style="background:#1E7A46;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">📤 Subidas</button><button id="_fsTab2" style="background:#2d333b;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">🗑 Borradas</button><button id="_fsZip" style="background:#33406a;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">⬇ TODAS (ZIP)</button><button id="_fsX" style="margin-left:auto;background:#444;color:#fff;border:0;border-radius:8px;padding:8px 12px">✕ Cerrar</button></div><div id="_fsCola"></div><div id="_fsInfo" style="color:#9db4d6;font-size:12px;margin-bottom:6px">Cargando…</div><div id="_fsGrid" style="flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-content:start;grid-auto-rows:max-content;align-items:start"></div>';
+ ov.innerHTML='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><b style="font-size:15px;color:#fff">🖼 Fotos en el servidor</b><button id="_fsTab1" style="background:#1E7A46;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">📤 Subidas</button><button id="_fsTab2" style="background:#2d333b;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">🗑 Borradas</button><button id="_fsTab3" style="background:#2d333b;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">📌 Asignadas</button><button id="_fsTab4" style="background:#2d333b;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">🧪 Verificador</button><button id="_fsZip" style="background:#33406a;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">⬇ TODAS (ZIP)</button><button id="_fsX" style="margin-left:auto;background:#444;color:#fff;border:0;border-radius:8px;padding:8px 12px">✕ Cerrar</button></div><div id="_fsCola"></div><div id="_fsInfo" style="color:#9db4d6;font-size:12px;margin-bottom:6px">Cargando…</div><div id="_fsGrid" style="flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-content:start;grid-auto-rows:max-content;align-items:start"></div>';
  document.body.appendChild(ov);
  document.getElementById('_fsX').onclick=function(){ov.remove()};
  var tab='subidas', subidas=[], borradas=[];
@@ -1298,6 +1298,9 @@ async function _showFotosSrv(){
  /* no-admin: solo ve SUS fotos del servidor */
  var _admF=(typeof esAdminReal==='function'&&esAdminReal());var _meF=(state.user&&state.user.supervisor)||'';
  if(!_admF){subidas=subidas.filter(function(f){return (f.supervisor||'')===_meF});borradas=borradas.filter(function(f){return (f.supervisor||'')===_meF});}
+ /* ASIGNADAS: las fotos realmente enganchadas a avances del proyecto */
+ var asignadas=[];try{(state.partes||[]).forEach(function(p){((p.fotos)||[]).forEach(function(u,ix){if(typeof u==='string'&&u.indexOf('http')===0)asignadas.push({url:u,foto_id:(p.client_id+'_'+ix),client_id:p.client_id,partida_id:p.id,fecha:p.fecha,supervisor:p.supervisor,disciplina:p.disc,ts:p.ts})})})}catch(_ea){}
+ if(!_admF){asignadas=asignadas.filter(function(f){return (f.supervisor||'')===_meF})}
  /* === cola local de ESTE equipo: fotos intentando subir o dañadas === */
  function _colaItems(){var out=[];
   (state.partes||[]).forEach(function(p){if(p.synced)return;(p.fotos||[]).forEach(function(fd,ix){if(typeof fd==='string'&&fd.indexOf('http')===0)return;var dead=!(typeof fd==='string'&&fd.indexOf('data:')===0&&fd.length>100);out.push({tipo:'Avance',rec:p,key:'partes',ix:ix,kb:Math.round(((fd&&fd.length)||0)*3/4096),dead:dead,label:'['+(p.id||'')+'] '+(p.fecha||'')+' · '+(p.supervisor||'')})})});
@@ -1314,14 +1317,18 @@ async function _showFotosSrv(){
  _fsColaDraw();
  function hmf(ts){try{var d=new Date(Number(ts));return d.toLocaleDateString()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}catch(e){return ''}}
  function draw(){
-  var list=tab==='subidas'?subidas:borradas;
+  var list=tab==='subidas'?subidas:(tab==='borradas'?borradas:asignadas);
   try{list.sort(function(x,y){var fx=x.fecha||'',fy=y.fecha||'';if(fx!==fy)return fx<fy?1:-1;var dx=x.disciplina||'',dy=y.disciplina||'';if(dx!==dy)return dx<dy?-1:1;return (Number(x.ts)||0)-(Number(y.ts)||0)});}catch(_se){}
   document.getElementById('_fsTab1').style.background=tab==='subidas'?'#1E7A46':'#2d333b';
   document.getElementById('_fsTab2').style.background=tab==='borradas'?'#7A1A1A':'#2d333b';
+  document.getElementById('_fsTab3').style.background=tab==='asignadas'?'#1F6FE0':'#2d333b';
+  document.getElementById('_fsTab4').style.background=tab==='verif'?'#8A4B00':'#2d333b';
   document.getElementById('_fsTab1').textContent='📤 Subidas ('+subidas.length+')';
   document.getElementById('_fsTab2').textContent='🗑 Borradas ('+borradas.length+')';
-  document.getElementById('_fsInfo').textContent=tab==='subidas'?('Todas las fotos que el servidor tiene guardadas ('+subidas.length+'). Toca una para verla · ⬇ para descargarla.'):('Registro de TODAS las fotos borradas ('+borradas.length+') — el archivo queda respaldado en la carpeta _borradas del servidor.');
+  document.getElementById('_fsTab3').textContent='📌 Asignadas ('+asignadas.length+')';
+  document.getElementById('_fsInfo').textContent=tab==='subidas'?('Todas las fotos que el servidor tiene guardadas ('+subidas.length+'). Toca una para verla · ⬇ para descargarla.'):(tab==='borradas'?('Registro de TODAS las fotos borradas ('+borradas.length+') — el archivo queda respaldado en la carpeta _borradas del servidor.'):(tab==='asignadas'?('Fotos enganchadas HOY a los avances del proyecto ('+asignadas.length+').'):'Compara las asignadas (amarillo) con borradas y huérfanas por código — marca duplicadas y bórralas definitivamente.'));
   var G=document.getElementById('_fsGrid');
+  if(tab==='verif'){_fsVerif(G);return;}
   G.innerHTML=list.map(function(f,i){var url=tab==='subidas'?f.url:(f.url_respaldo||f.url_original);var _hh='';try{if(f.ts&&typeof fmtHora==='function')_hh=' · '+fmtHora(Number(f.ts))}catch(_he){}var cap='['+esc(f.partida_id||'?')+'] '+esc(f.fecha||'')+_hh+(f.disciplina?(' · '+esc(f.disciplina)):'')+'<br>'+esc(f.supervisor||'')+(tab==='borradas'?('<br><span style="color:#ff9d9d">borrada por '+esc(f.borrado_por||'?')+' · '+hmf(f.borrado_ts)+'</span>'):'');
    return '<div style="border:1px solid #243a5e;border-radius:10px;overflow:hidden;background:#101a30"><a href="'+esc(url)+'" target="_blank" rel="noopener"><img src="'+esc(url)+'" loading="lazy" style="width:100%;height:110px;object-fit:cover;display:block;background:#0d1117"></a><div style="padding:6px 8px;font-size:10.5px;line-height:1.45;color:#9db4d6">'+cap+'</div><div style="display:flex"><button data-go="'+i+'" title="Ir a la actividad y al día" style="flex:1;background:#1E7A46;color:#fff;border:0;padding:7px 2px;font-weight:800;font-size:11px;cursor:pointer">📍 Ir</button><button data-dl="'+i+'" style="flex:1;background:#33406a;color:#fff;border:0;padding:7px 2px;font-weight:800;font-size:11px;cursor:pointer">⬇ Bajar</button>'+(tab==='borradas'?('<button data-rst="'+i+'" style="flex:1.3;background:#8A4B00;color:#fff;border:0;padding:7px 2px;font-weight:800;font-size:11px;cursor:pointer">♻ Restablecer</button>'):'')+'</div></div>'}).join('')||'<div style="color:#7d8590;grid-column:1/-1">No hay fotos aquí.</div>';
   Array.prototype.forEach.call(G.querySelectorAll('[data-dl]'),function(b){b.onclick=async function(){var f=list[+b.getAttribute('data-dl')];var url=tab==='subidas'?f.url:(f.url_respaldo||f.url_original);try{var r=await fetch(url);var bl=await r.blob();var fn=((f.path||f.path_original||('foto_'+(f.foto_id||'x')))+'').split('/').pop();_dlBlob(bl,fn);toast('⬇ '+fn)}catch(e){toast('No se pudo descargar')}}});
@@ -1350,7 +1357,56 @@ async function _showFotosSrv(){
  }catch(e){toast('No se pudo restablecer: '+e)}}
  document.getElementById('_fsTab1').onclick=function(){tab='subidas';draw()};
  document.getElementById('_fsTab2').onclick=function(){tab='borradas';draw()};
- document.getElementById('_fsZip').onclick=async function(){var list=tab==='subidas'?subidas:borradas;if(!list.length){toast('No hay fotos');return}toast('Armando ZIP de '+list.length+' fotos…');var files=[];var okz=0;for(var i=0;i<list.length;i++){var f=list[i];var url=tab==='subidas'?f.url:(f.url_respaldo||f.url_original);try{var r=await fetch(url);if(r.ok){var ab=await r.arrayBuffer();if(ab.byteLength){files.push({name:(tab==='subidas'?'fotos/':'borradas/')+((f.path||f.path_original||('foto_'+i+'.jpg'))),data:new Uint8Array(ab)});okz++}}}catch(e){}}
+ document.getElementById('_fsTab3').onclick=function(){tab='asignadas';draw()};
+ document.getElementById('_fsTab4').onclick=function(){tab='verif';draw()};
+ /* === VERIFICADOR: agrupa por código — la asignada en AMARILLO, duplicadas marcables, borrado definitivo === */
+ function _fsVerif(G){
+  var asigByCode={};asignadas.forEach(function(a){(asigByCode[a.partida_id]=asigByCode[a.partida_id]||[]).push(a)});
+  var asigUrls={};asignadas.forEach(function(a){asigUrls[a.url]=1});
+  var parteIds={};(state.partes||[]).forEach(function(p){parteIds[p.client_id]=1});
+  var cand=[];
+  borradas.forEach(function(f){cand.push({src:'borrada',code:f.partida_id||'?',f:f,url:(f.url_respaldo||f.url_original||''),fecha:f.fecha,ts:f.ts,extra:'borrada por '+(f.borrado_por||'?')})});
+  subidas.forEach(function(f){if(asigUrls[f.url])return;if(f.client_id&&parteIds[f.client_id])return;cand.push({src:'huerfana',code:f.partida_id||'?',f:f,url:f.url,fecha:f.fecha,ts:f.ts,extra:'subida sin asignar'})});
+  var byCode={};cand.forEach(function(c){(byCode[c.code]=byCode[c.code]||[]).push(c)});
+  var codes=Object.keys(byCode).sort();
+  window._fvSel={};window._fvCand=cand;
+  var H='<div style="grid-column:1/-1;background:#0F2A18;border:1px solid #1E7A46;border-radius:10px;padding:9px 12px;color:#7fd7a5;font-size:12px;font-weight:700">🧪 '+asignadas.length+' asignadas · '+cand.length+' candidatas a limpiar en '+codes.length+' códigos. La ★ AMARILLA es la asignada correcta. Las candidatas con asignada vienen pre-marcadas.</div>';
+  codes.forEach(function(code){var asg=asigByCode[code]||[];var cds=byCode[code];
+   H+='<div style="grid-column:1/-1;background:#101a30;border:1px solid #243a5e;border-radius:10px;padding:9px 11px"><div style="font-weight:800;color:#fff;font-size:12.5px;margin-bottom:6px">['+esc(code)+'] <span style="color:#9db4d6;font-weight:700">'+asg.length+' asignada(s) · '+cds.length+' candidata(s)'+(asg.length?'':' · ⚠ sin foto asignada hoy')+'</span></div><div style="display:flex;gap:7px;flex-wrap:wrap;align-items:flex-start">';
+   if(asg.length){asg.forEach(function(a){H+='<div style="width:96px"><img src="'+esc(a.url)+'" loading="lazy" style="width:96px;height:72px;object-fit:cover;border-radius:8px;border:3px solid #FFD100;display:block;box-sizing:border-box"><div style="font-size:9px;color:#FFD100;font-weight:800;margin-top:1px">★ ASIGNADA · '+esc(a.fecha||'')+'</div></div>'})}
+   else{H+='<div style="width:96px;height:72px;border:1.5px dashed #44506b;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#7d8590;font-size:9px;text-align:center">sin foto<br>asignada</div>';}
+   cds.forEach(function(c){var gi=cand.indexOf(c);var pre=asg.length?1:0;if(pre)window._fvSel[gi]=1;
+    H+='<div style="width:96px;position:relative"><img src="'+esc(c.url)+'" loading="lazy" style="width:96px;height:72px;object-fit:cover;border-radius:8px;border:3px solid '+(pre?'#B42318':'#44506b')+';display:block;box-sizing:border-box"><label style="position:absolute;top:3px;right:3px;cursor:pointer"><input type="checkbox" class="_fvChk" data-g="'+gi+'" '+(pre?'checked':'')+' style="width:17px;height:17px"></label><div style="font-size:9px;color:'+(c.src==='borrada'?'#ff9d9d':'#e8cf8a')+';margin-top:1px;line-height:1.3">'+(c.src==='borrada'?'🗑 ':'❔ ')+esc(c.fecha||'')+(c.ts?(' '+fmtHora(Number(c.ts))):'')+'<br>'+esc(c.extra||'')+'</div></div>';});
+   H+='</div></div>';});
+  if(!codes.length)H+='<div style="grid-column:1/-1;color:#7d8590;padding:14px;text-align:center">No hay candidatas — todo limpio ✓</div>';
+  H+='<div style="grid-column:1/-1;position:sticky;bottom:0;background:#0b1220;padding:8px 0"><button id="_fvDel" style="width:100%;background:#B42318;color:#fff;border:0;border-radius:10px;padding:12px;font-weight:800">🗑 Borrar marcadas (<span id="_fvN">0</span>) DEFINITIVAMENTE</button></div>';
+  G.innerHTML=H;
+  function updN(){var n=0;for(var k in window._fvSel)if(window._fvSel[k])n++;var e=document.getElementById('_fvN');if(e)e.textContent=n;}
+  G.querySelectorAll('._fvChk').forEach(function(c){c.onchange=function(){window._fvSel[c.getAttribute('data-g')]=c.checked?1:0;updN()}});
+  updN();
+  var db=document.getElementById('_fvDel');if(db)db.onclick=async function(){
+   if(!(typeof esAdminReal==='function'&&esAdminReal())){toast('Solo el administrador puede borrar definitivamente');return}
+   var marked=window._fvCand.filter(function(c,i){return window._fvSel[i]});
+   if(!marked.length){toast('No hay fotos marcadas');return}
+   if(!confirm('🗑 ¿Borrar '+marked.length+' foto(s) DEFINITIVAMENTE del servidor?\n\nSe elimina el registro Y el archivo. NO se pueden recuperar.'))return;
+   var ok=0;
+   for(var i=0;i<marked.length;i++){var c=marked[i];try{
+    if(c.src==='borrada'){var f=c.f;
+     if(f.path_respaldo){try{await fetch(sbBase()+'/storage/v1/object/obra-fotos/'+fotoEncPath(f.path_respaldo),{method:'DELETE',headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}})}catch(_e){}}
+     await fetch(sbBase()+'/rest/v1/fotos_borradas?id=eq.'+encodeURIComponent(f.id),{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
+     borradas=borradas.filter(function(x){return x!==f});ok++;
+    }else{var f2=c.f;
+     if(f2.path){try{await fetch(sbBase()+'/storage/v1/object/obra-fotos/'+fotoEncPath(f2.path),{method:'DELETE',headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}})}catch(_e2){}}
+     await fetch(sbBase()+'/rest/v1/fotos?foto_id=eq.'+encodeURIComponent(f2.foto_id),{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
+     subidas=subidas.filter(function(x){return x!==f2});ok++;
+    }
+   }catch(_e3){}}
+   if(typeof logCambio==='function')logCambio('FOTO','verificador','borradas definitivamente '+ok+' foto(s) duplicadas/huérfanas');
+   toast('🗑 '+ok+' foto(s) eliminadas definitivamente');
+   draw();
+  };
+ }
+ document.getElementById('_fsZip').onclick=async function(){if(tab==='verif'){toast('El verificador no exporta ZIP');return}var list=tab==='subidas'?subidas:(tab==='borradas'?borradas:asignadas);if(!list.length){toast('No hay fotos');return}toast('Armando ZIP de '+list.length+' fotos…');var files=[];var okz=0;for(var i=0;i<list.length;i++){var f=list[i];var url=tab==='subidas'?f.url:(f.url_respaldo||f.url_original);try{var r=await fetch(url);if(r.ok){var ab=await r.arrayBuffer();if(ab.byteLength){files.push({name:(tab==='subidas'?'fotos/':'borradas/')+((f.path||f.path_original||('foto_'+i+'.jpg'))),data:new Uint8Array(ab)});okz++}}}catch(e){}}
   if(!files.length){toast('No se pudo bajar ninguna');return}
   var blob=_zipStore(files);_dlBlob(blob,'FOTOS servidor '+(tab==='subidas'?'subidas':'borradas')+' '+todayISO()+'.zip');toast('💾 ZIP con '+okz+' fotos descargado ('+_kb(blob.size)+')')};
  draw();
