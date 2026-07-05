@@ -1489,7 +1489,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b68';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
+var APP_VER='v20260705b69';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -2931,30 +2931,52 @@ try{
    try{(await sbSelect('fotos','select=path')).forEach(function(r){if(r.path)paths.push(r.path)})}catch(_e){}
    try{(await sbSelect('fotos_borradas','select=path_respaldo,path_original')).forEach(function(r){if(r.path_respaldo)paths.push(r.path_respaldo);if(r.path_original)paths.push(r.path_original)})}catch(_e2){}
    for(var i=0;i<paths.length;i+=90){var lote=paths.slice(i,i+90);try{await fetch(sbBase()+'/storage/v1/object/'+FOTO_BUCKET,{method:'DELETE',headers:sbHead({'Content-Type':'application/json'}),body:JSON.stringify({prefixes:lote})})}catch(_e3){}}
-   est.textContent='2/4 · vaciando tablas…';
+   est.textContent='2/4 · contando y vaciando tablas…';
    var WT=['partes','fotos','fotos_borradas','metrados','nuevas','ediciones','programacion','calendario','reportabilidad','reinicios','pendientes','cambios','conflictos','restricciones_generales','restricciones_partida','tormenta','dias_habilitados','borrados','cuadrillas','bitacora','interf_log','presencia_lapsos','avance_semana','metas_semana','prog_semana','razones_noavance','semanas'];
+   var _rep=[];var _bakedN=DATA.partidas.filter(function(p){return p.metrado>0}).length;
+   async function _wCount(tb){try{var r=await fetch(sbBase()+'/rest/v1/'+tb+'?select=*',{method:'HEAD',headers:sbHead({'Prefer':'count=exact','Range-Unit':'items','Range':'0-0'})});var cr=r.headers.get('content-range')||'';var m=cr.match(/\/(\d+)\s*$/);return m?(+m[1]):null;}catch(e){return null}}
    for(var t=0;t<WT.length;t++){var tb=WT[t];var pk=(typeof _impPk==='function'&&_impPk(tb))?_impPk(tb).split(',')[0]:'id';if(tb==='interf_log')pk='id';
+    var _antes=await _wCount(tb);
     try{await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?'+pk+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})})}catch(_e4){}
+    _rep.push({tabla:tb,antes:_antes});
     est.textContent='2/4 · vaciando tablas… ('+(t+1)+'/'+WT.length+')';}
-   est.textContent='2/4 · anulando metrados y unidades de fábrica del cronograma…';
-   try{var _bakedRows=DATA.partidas.filter(function(p){return p.metrado>0}).map(function(p){return {proyecto:DATA.proyecto,partida_id:p.id,unidad:null,total:0,rend:0,dias:null,quien:'sistema (borrar base)',fecha:todayISO(),ts:(typeof nowSrv==='function'?nowSrv():Date.now())}});
-    for(var _bi=0;_bi<_bakedRows.length;_bi+=200){var _lote=_bakedRows.slice(_bi,_bi+200);await fetch(sbBase()+'/rest/v1/metrados?on_conflict=proyecto,partida_id',{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_lote)})}}catch(_e4b){}
    est.textContent='3/4 · avisando a los equipos…';
    try{await fetch(sbBase()+'/rest/v1/dispositivos?proyecto=eq.'+encodeURIComponent(DATA.proyecto),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'mpwipe',cmd_ts:(typeof nowSrv==='function'?nowSrv():Date.now()),updated_at:new Date().toISOString()})})}catch(_e5){}
    /* CLAVE anti re-subida: seguir CONGELADO mientras los otros equipos borran su copia local. Si descongelamos de una, una pestaña que aún tiene las partes en memoria las re-sube al instante (fue justo el bug). */
    for(var _wc=18;_wc>0;_wc--){est.textContent='3/4 · esperando a que los equipos borren su copia local… ('+_wc+'s) · no cierres esto';await new Promise(function(_r){setTimeout(_r,1000)});}
    est.textContent='3/4 · barrido final de seguridad…';
    for(var _t2=0;_t2<WT.length;_t2++){var _tb2=WT[_t2];var _pk2=(typeof _impPk==='function'&&_impPk(_tb2))?_impPk(_tb2).split(',')[0]:'id';if(_tb2==='interf_log')_pk2='id';try{await _mpFetchR(sbBase()+'/rest/v1/'+_tb2+'?'+_pk2+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})})}catch(_e4b2){}}
-   est.textContent='descongelando el servidor…';
+   /* anular metrados DESPUÉS del barrido: si no, el barrido borra estos ceros y reaparece el metrado inicial de fábrica con su avance 'Carga inicial' */
+   est.textContent='3/4 · dejando el cronograma en cero…';
+   try{var _bakedRows=DATA.partidas.filter(function(p){return p.metrado>0}).map(function(p){return {proyecto:DATA.proyecto,partida_id:p.id,unidad:null,total:0,rend:0,dias:null,quien:'sistema (borrar base)',fecha:todayISO(),ts:(typeof nowSrv==='function'?nowSrv():Date.now())}});
+    for(var _bi=0;_bi<_bakedRows.length;_bi+=200){var _lote=_bakedRows.slice(_bi,_bi+200);await _mpFetchR(sbBase()+'/rest/v1/metrados?on_conflict=proyecto,partida_id',{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_lote)})}}catch(_e4b){}
+   est.textContent='4/4 · verificando el estado final del servidor…';
+   for(var _ri=0;_ri<_rep.length;_ri++){_rep[_ri].quedan=await _wCount(_rep[_ri].tabla);}
    try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,modo_prueba:false,updated_at:new Date().toISOString()})})}catch(_efz2){}
    window._mpRestoring=0;
-   est.textContent='4/4 · limpiando este equipo…';
    try{['obf4_partes','obf4_nuevas','obf4_meta','obf4_repo','obf4_reinicios','obf4_edits','obf4_prog','obf4_calend','obf4_storm','obf4_restot','obf4_pend','obf4_delp','obf4_sent','obf4_cambios','obf4_progdel','obf4_cuadrillas','obf4_restrpart','obf4_diasopen','obf4_dpdone','obf4_pddone','obf4_iflogq'].forEach(function(k){try{localStorage.removeItem(k)}catch(_ek){}});Object.keys(localStorage).forEach(function(k){if(k.indexOf('obf4_tomb_')===0){try{localStorage.removeItem(k)}catch(_ek2){}}})}catch(_e6){}
-   est.textContent='✅ Base vaciada. Reiniciando…';
-   setTimeout(function(){location.reload()},1200);
+   _wipeReporte(ov,_rep,paths.length,_bakedN);
   }catch(e){est.textContent='⚠ Error: '+e;go.disabled=false;tx.disabled=false;window._impBusy=0;window._mpRestoring=0;try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})})}catch(_efz3){}}
  };
 }catch(e){toast('Error: '+e)}}
+/* Ventana-reporte de "Borrar base": qué había en cada tabla y qué quedó (✓/✗) */
+function _wipeReporte(ov,rep,fotosDel,bakedN){try{
+ var _trans={presencia_lapsos:1,bitacora:1,interf_log:1};
+ var okAll=rep.every(function(r){if(_trans[r.tabla])return true;if(r.tabla==='metrados')return (r.quedan||0)<=(bakedN||0);return (r.quedan||0)===0;});
+ var totalAntes=rep.reduce(function(s,r){return s+(r.antes||0)},0);
+ var ordenado=rep.slice().sort(function(a,b){return (b.antes||0)-(a.antes||0)});
+ function fila(ico,tab,txt,col,bold){return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eef1f6"><span style="font-size:15px;min-width:18px;text-align:center">'+ico+'</span><b style="min-width:132px;color:'+(col||'#1B2433')+'">'+tab+'</b><span style="color:'+(col||'#5C6779')+';font-weight:'+(bold?'800':'400')+'">'+txt+'</span></div>';}
+ var filas=ordenado.map(function(r){
+  var antes=(r.antes==null)?'?':r.antes, quedan=(r.quedan==null)?'?':r.quedan;
+  if(r.tabla==='metrados'){var okm=(r.quedan||0)<=(bakedN||0);return fila(okm?'✅':'❌','metrados',antes+' borradas · quedan '+quedan+' en 0 (cronograma reiniciado)',okm?'#1E7A46':'#B42318',!okm);}
+  if((r.antes||0)===0)return fila('➖',r.tabla,'estaba vacía','#98A2B3');
+  if((r.quedan||0)===0)return fila('✅',r.tabla,antes+'/'+antes+' borradas','#1E7A46');
+  if(_trans[r.tabla])return fila('🔵',r.tabla,antes+' borradas · quedan '+quedan+' (recreadas por equipos activos)','#1F6FEB');
+  return fila('❌',r.tabla,'⚠ QUEDAN '+quedan+' de '+antes,'#B42318',true);
+ }).join('');
+ ov.innerHTML='<div style="background:#fff;width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:16px;box-sizing:border-box;max-height:92vh;overflow:auto"><div style="font-weight:900;font-size:16px;margin-bottom:2px;color:'+(okAll?'#1E7A46':'#B42318')+'">'+(okAll?'✅ Base vaciada por completo':'⚠️ Base vaciada — revisa lo marcado en rojo')+'</div><div style="font-size:12px;color:#5C6779;margin-bottom:10px">Estado del servidor DESPUÉS de Borrar base · había '+totalAntes+' filas en total</div><div style="border:1px solid #E6EBF2;border-radius:10px;padding:6px 12px;margin-bottom:10px;font-size:12.5px">'+filas+fila('🖼','fotos (archivos)',fotosDel+' archivos borrados del storage','#5C6779')+'</div><div style="font-size:11.5px;color:#98A2B3;margin-bottom:10px">Se conservan roles, permisos, configuración y dispositivos. El cronograma quedó en 0 (metrados en 0) para que no reaparezca el avance inicial de fábrica.</div><button id="_wipeRestart" style="width:100%;background:#1F3864;color:#fff;border:0;border-radius:10px;padding:13px;font-weight:800">Reiniciar la app ↻</button></div>';
+ var b=document.getElementById('_wipeRestart');if(b)b.onclick=function(){location.reload()};
+}catch(e){try{location.reload()}catch(_e){}}}
 /* === Selector universal de fotos: tomar / galería / una ya subida ESE día y de la especialidad === */
 function _fotoPick(opts,cb){try{
  opts=opts||{};var fecha=opts.fecha||(typeof todayISO==='function'?todayISO():'');var disc=opts.disc||(state.user&&state.user.disc)||'';
