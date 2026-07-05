@@ -1111,7 +1111,7 @@ async function _restoreFromBackup(path,etiqueta){
   for(var i=0;i<n;i++){var tb=_MP_TABLAS[i];var rows=snap.tablas[tb]||[];var pk=_impPk(tb)||'id';var pk0=pk.split(',')[0];
    _mpProcSet(8+i/n*86,'♻️ '+tb+' ('+(i+1)+'/'+n+') — '+rows.length+' fila(s)');
    try{await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?'+pk0+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
-    for(var c=0;c<rows.length;c+=200){await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(rows.slice(c,c+200))})}
+    for(var c=0;c<rows.length;c+=200){await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_rePri(rows.slice(c,c+200)))})}
    }catch(eT){fallos.push(tb)}}
   if(fallos.length)throw new Error('No se pudieron restaurar: '+fallos.join(', ')+' (la base sigue congelada; reintenta)');
   _mpProcSet(96,'📢 Reiniciando los equipos…');
@@ -1171,6 +1171,8 @@ async function _mpStart(){window._mpBusyProc=1;_mpProcUI('🟡 El server iniciar
   _mpApply(true,(state.user&&state.user.supervisor)||'');
  }catch(e){_mpEtaStop();var o=document.getElementById('_mpProc');if(o)o.remove();alert('❌ NO se activaron las pruebas (la base NO se tocó):\n'+(e&&e.message||e))}
  window._mpBusyProc=0}
+/* prioridad de restauración: al reponer, updated_at=null → el servidor le pone now() (el trigger keep_newest), así la restauración GANA sobre re-subidas, SIN tocar la fecha de creación real (ts/fecha/created_at) */
+function _rePri(arr){try{return (arr||[]).map(function(r){var n={};for(var k in r)n[k]=r[k];n.updated_at=null;return n})}catch(e){return arr}}
 async function _mpFetchR(url,opts,tries){tries=tries||3;var lastErr=null;for(var i=0;i<tries;i++){try{var r=await fetch(url,opts);if(r.ok)return r;lastErr=new Error('HTTP '+r.status)}catch(e){lastErr=e}if(i<tries-1)await new Promise(function(res){setTimeout(res,700)})}throw lastErr}
 async function _mpEnd(){if(window._mpEndRunning){if(typeof toast==='function')toast('⏳ Ya hay una restauración en curso, espera…');return}window._mpEndRunning=true;
  try{await _mpEndBody()}finally{window._mpEndRunning=false}}
@@ -1190,7 +1192,7 @@ async function _mpEndBody(){window._mpBusyProc=1;window._mpRestoring=1;_mpProcUI
    if(i>0)_mpEta(((Date.now()-t0)/i)*(n-i)+3000);
    try{
     await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?'+pk0+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
-    for(var c=0;c<rows.length;c+=200){var lote=rows.slice(c,c+200);
+    for(var c=0;c<rows.length;c+=200){var lote=_rePri(rows.slice(c,c+200));
      await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(lote)})}
    }catch(eTab){fallos.push(tb+': '+((eTab&&eTab.message)||eTab))}}
   if(fallos.length){throw new Error('⚠ '+fallos.length+' tabla(s) NO se pudieron restaurar (el resto SÍ quedó bien):\n'+fallos.join('\n')+'\n\nLa base sigue CONGELADA — reintenta para completar solo lo que falló (es seguro, no duplica nada).')}
@@ -1482,7 +1484,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b65';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
+var APP_VER='v20260705b66';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
