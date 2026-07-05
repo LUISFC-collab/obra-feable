@@ -462,7 +462,7 @@
     <div class="sech" style="display:flex;align-items:center;gap:8px">Cuadrilla <span id="rCuadChk" style="color:#1E7A46;font-weight:800;font-size:12px"></span><button type="button" id="rCuadCfg" style="margin-left:auto;background:#33406A;color:#fff;border:0;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer">⚙ Definir cuadrillas</button></div>
     <div id="rCuadPick" style="display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 6px"></div>
     <div id="rCuadInfo" class="hint" style="margin:0 0 10px"></div>
-    <div class="sech">Personal utilizado</div>
+    <div class="sech" id="rPerSech">Personal utilizado</div>
     <div id="rPersonal"></div>
     <button type="button" class="addrow" id="rAddPer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Otro tipo de personal</button>
     <div class="sech">Fotos del trabajo</div>
@@ -1124,7 +1124,7 @@ function renderCuadPick(){var w=document.getElementById('rCuadPick');if(!w)retur
   w.appendChild(b)})(n)}
  if(regCuad){var d=regCuad;var nms=_cuadNombres(d);if(chk){chk.textContent='✓ definida';chk.style.color='#1E7A46'}if(info){info.innerHTML='<b style="color:#1E7A46">✓ Cuadrilla '+d.numero+'</b> · conformada por: <b>'+esc(nms.length?nms.join(', '):'(sin nombres)')+'</b> · '+esc(_cuadResumen(d))+' · datos automáticos (no editables aquí)<div style="margin-top:7px"><button type="button" id="rCuadMod" style="background:#8A4B00;color:#fff;border:0;border-radius:9px;padding:9px 13px;font-weight:800;font-size:12.5px;cursor:pointer">🔁 La cuadrilla cambió hoy — registrar el cambio</button></div>';info.style.color='#3A4657';var bm=document.getElementById('rCuadMod');if(bm)bm.onclick=function(){_showCuadrillas(regCuad.numero)};}}
  else{if(chk){chk.textContent='\u26a0 obligatorio';chk.style.color='#C81E1E'}if(info){info.innerHTML='<div style="border:1.5px solid #F1B4B0;background:#FDECEA;border-radius:10px;padding:9px 11px;color:#C81E1E;font-weight:800">\u26a0 Elige una cuadrilla (obligatorio) para poder guardar el parte.<div style="font-weight:600;color:#8A2A22;margin-top:3px;font-size:11.5px">Toca C1\u2013C5 arriba, o usa \u2699 Definir cuadrillas si a\u00fan no existe.</div></div>';info.style.color=''}}
- try{_updSaveGate()}catch(e){}try{var ab=document.getElementById('rAddPer');if(ab)ab.style.display=window._regCuadLock?'none':''}catch(e){}}
+ try{_updSaveGate()}catch(e){}try{var ab=document.getElementById('rAddPer');if(ab)ab.style.display='none'}catch(e){}}
 function _showCuadrillas(nFoco){if(typeof _gateW==='function'&&!_gateW())return;if(typeof _gateAcc==='function'&&!_gateAcc('cuad_definir','Definir cuadrillas'))return;
  var DISC0=(state.user&&state.user.disc)||'';
  var ov=document.getElementById('_cuadOv');if(ov)ov.remove();
@@ -1169,18 +1169,14 @@ function _showCuadrillas(nFoco){if(typeof _gateW==='function'&&!_gateW())return;
   }
   paint()}
  draw();if(nFoco)setTimeout(function(){editor(nFoco)},60)}
-function renderPer(){const w=$('rPersonal');w.innerHTML='';
- if(window._regCuadLock&&regCuad){regPer.forEach(function(r){const row=document.createElement('div');row.className='perrow';row.innerHTML='<div class="ptname">'+esc(r.tipo)+((r.nombres&&r.nombres.filter(Boolean).length)?('<div style="font-size:11px;color:#1E7A46;font-weight:700">'+esc(r.nombres.filter(Boolean).join(', '))+'</div>'):'')+'</div><div class="stepper" style="opacity:.6;pointer-events:none"><span class="n tnum">'+r.cant+'</span></div>';w.appendChild(row)});
-  var nota=document.createElement('div');nota.className='hint';nota.style.cssText='margin:4px 0 0;color:#1E7A46;font-weight:700';nota.textContent='✓ Personal cargado automáticamente por la cuadrilla — para cambiarlo usa ⚙ Definir cuadrillas';w.appendChild(nota);return}
- regPer.forEach((r,i)=>{const row=document.createElement('div');row.className='perrow';
-  if(r.fixed)row.innerHTML='<div class="ptname">'+r.tipo+'</div>';else row.innerHTML='<div class="pt"><input placeholder="Tipo de personal" value="'+esc(r.tipo)+'" data-i="'+i+'"></div>';
-  row.innerHTML+='<div class="stepper"><button data-m="'+i+'">−</button><span class="n tnum" id="pn'+i+'">'+r.cant+'</span><button data-p="'+i+'">+</button></div>'+(r.fixed?(r.saved?'<button class="perdel" data-s="'+i+'">×</button>':''):'<button class="perdel" data-d="'+i+'">×</button>');
-  w.appendChild(row)});
-  w.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const i=+b.dataset.m;regPer[i].cant=Math.max(0,regPer[i].cant-1);$('pn'+i).textContent=regPer[i].cant});
-  w.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const i=+b.dataset.p;regPer[i].cant++;$('pn'+i).textContent=regPer[i].cant});
-  w.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{regPer.splice(+b.dataset.d,1);renderPer()});
-  w.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{var i=+b.dataset.s;var nm=regPer[i].tipo;var d=state.user.disc;if(state.puestos&&state.puestos[d]){state.puestos[d]=state.puestos[d].filter(function(x){return x!==nm});store.set(KPU,state.puestos)}regPer.splice(i,1);renderPer();toast('Puesto quitado')});
-  w.querySelectorAll('input[data-i]').forEach(inp=>inp.oninput=()=>{regPer[+inp.dataset.i].tipo=inp.value})}
+function renderPer(){const w=$('rPersonal');if(!w)return;w.innerHTML='';
+ var sech=document.getElementById('rPerSech');var addb=document.getElementById('rAddPer');if(addb)addb.style.display='none';
+ if(window._regCuadLock&&regCuad){if(sech)sech.style.display='';
+  var chips=regPer.filter(function(r){return r.cant>0}).map(function(r){var nm=(r.nombres&&r.nombres.filter(Boolean).length)?(' \u00b7 '+esc(r.nombres.filter(Boolean).join(', '))):'';return '<span style="display:inline-flex;align-items:center;background:#EAF3EC;color:#1E7A46;border-radius:99px;padding:4px 11px;font-size:12px;font-weight:800;margin:0 6px 6px 0">'+esc(r.tipo)+' \u00d7'+r.cant+nm+'</span>'}).join('');
+  w.innerHTML='<div style="display:flex;flex-wrap:wrap;align-items:center">'+(chips||'<span class="hint" style="margin:0">La cuadrilla no tiene personal cargado</span>')+'</div><div class="hint" style="margin:2px 0 0;color:#1E7A46;font-weight:700">\u2713 Cargado por la cuadrilla \u2014 c\u00e1mbialo en \u2699 Definir cuadrillas</div>';
+  return}
+ if(sech)sech.style.display='none';
+ w.innerHTML='<div class="hint" style="margin:0;color:#8A94A6">Elige una cuadrilla arriba y su personal se carga solo.</div>';}
 try{$('rCuadCfg').onclick=function(){_showCuadrillas()}}catch(e){}
 $('rAddPer').onclick=()=>{var nm=prompt('Nombre del nuevo puesto / tipo de personal:');nm=(nm||'').trim();if(!nm)return;if(!state.puestos)state.puestos={};var d=state.user.disc;if(!state.puestos[d])state.puestos[d]=[];if(state.puestos[d].indexOf(nm)<0){state.puestos[d].push(nm);store.set(KPU,state.puestos)}regPer.push({tipo:nm,cant:1,fixed:true,saved:true});renderPer();toast('Puesto guardado para reusar')};
 function renderRepo(p){const w=$('rRepo');const items=state.repo[p.id]||[];w.innerHTML='';
@@ -1295,7 +1291,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b50';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b51';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
