@@ -1196,9 +1196,12 @@ async function _mpEndBody(){window._mpBusyProc=1;window._mpRestoring=1;_mpProcUI
      await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(lote)})}
    }catch(eTab){fallos.push(tb+': '+((eTab&&eTab.message)||eTab))}}
   if(fallos.length){throw new Error('⚠ '+fallos.length+' tabla(s) NO se pudieron restaurar (el resto SÍ quedó bien):\n'+fallos.join('\n')+'\n\nLa base sigue CONGELADA — reintenta para completar solo lo que falló (es seguro, no duplica nada).')}
-  _mpEtaStop();_mpProcSet(96,'📢 Reiniciando todos los equipos…');
-  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
+  _mpEtaStop();_mpProcSet(95,'📢 Avisando a los equipos que borren su copia de prueba…');
+  /* mpwipe ANTES de descongelar (antes iba después → una pestaña re-subía datos de prueba al descongelar) */
   try{await fetch(sbBase()+'/rest/v1/dispositivos?device_id=neq.'+encodeURIComponent(deviceId()),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'mpwipe',cmd_ts:Date.now(),updated_at:new Date().toISOString()})})}catch(e){}
+  /* CLAVE anti re-subida: seguir CONGELADO ~18s para que los equipos borren su copia local ANTES de descongelar */
+  for(var _mwc=18;_mwc>0;_mwc--){_mpProcSet(95+(18-_mwc)/18*3,'📢 Esperando a que los equipos borren su copia de prueba… ('+_mwc+'s)');await new Promise(function(_r){setTimeout(_r,1000)});}
+  await _mpFetchR(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
   window._modoPrueba=false;try{localStorage.setItem('obf4_modoprueba','')}catch(e){}try{localStorage.removeItem('obf4_mpbackup')}catch(e){}
   _mpProcSet(100,'✅ Base restaurada TAL COMO ESTABA. Este equipo también se reiniciará…');
   setTimeout(function(){window._mpRestoring=0;window._mpBusyProc=0;_mpLocalWipe()},2200);
@@ -1484,7 +1487,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b66';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
+var APP_VER='v20260705b67';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -2929,13 +2932,17 @@ try{
    est.textContent='2/4 · vaciando tablas…';
    var WT=['partes','fotos','fotos_borradas','metrados','nuevas','ediciones','programacion','calendario','reportabilidad','reinicios','pendientes','cambios','conflictos','restricciones_generales','restricciones_partida','tormenta','dias_habilitados','borrados','cuadrillas','bitacora','interf_log','presencia_lapsos','avance_semana','metas_semana','prog_semana','razones_noavance','semanas'];
    for(var t=0;t<WT.length;t++){var tb=WT[t];var pk=(typeof _impPk==='function'&&_impPk(tb))?_impPk(tb).split(',')[0]:'id';if(tb==='interf_log')pk='id';
-    try{await fetch(sbBase()+'/rest/v1/'+tb+'?'+pk+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})})}catch(_e4){}
+    try{await _mpFetchR(sbBase()+'/rest/v1/'+tb+'?'+pk+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})})}catch(_e4){}
     est.textContent='2/4 · vaciando tablas… ('+(t+1)+'/'+WT.length+')';}
    est.textContent='2/4 · anulando metrados y unidades de fábrica del cronograma…';
    try{var _bakedRows=DATA.partidas.filter(function(p){return p.metrado>0}).map(function(p){return {proyecto:DATA.proyecto,partida_id:p.id,unidad:null,total:0,rend:0,dias:null,quien:'sistema (borrar base)',fecha:todayISO(),ts:(typeof nowSrv==='function'?nowSrv():Date.now())}});
     for(var _bi=0;_bi<_bakedRows.length;_bi+=200){var _lote=_bakedRows.slice(_bi,_bi+200);await fetch(sbBase()+'/rest/v1/metrados?on_conflict=proyecto,partida_id',{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_lote)})}}catch(_e4b){}
    est.textContent='3/4 · avisando a los equipos…';
    try{await fetch(sbBase()+'/rest/v1/dispositivos?proyecto=eq.'+encodeURIComponent(DATA.proyecto),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'mpwipe',cmd_ts:(typeof nowSrv==='function'?nowSrv():Date.now()),updated_at:new Date().toISOString()})})}catch(_e5){}
+   /* CLAVE anti re-subida: seguir CONGELADO mientras los otros equipos borran su copia local. Si descongelamos de una, una pestaña que aún tiene las partes en memoria las re-sube al instante (fue justo el bug). */
+   for(var _wc=18;_wc>0;_wc--){est.textContent='3/4 · esperando a que los equipos borren su copia local… ('+_wc+'s) · no cierres esto';await new Promise(function(_r){setTimeout(_r,1000)});}
+   est.textContent='3/4 · barrido final de seguridad…';
+   for(var _t2=0;_t2<WT.length;_t2++){var _tb2=WT[_t2];var _pk2=(typeof _impPk==='function'&&_impPk(_tb2))?_impPk(_tb2).split(',')[0]:'id';if(_tb2==='interf_log')_pk2='id';try{await _mpFetchR(sbBase()+'/rest/v1/'+_tb2+'?'+_pk2+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})})}catch(_e4b2){}}
    est.textContent='descongelando el servidor…';
    try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,modo_prueba:false,updated_at:new Date().toISOString()})})}catch(_efz2){}
    window._mpRestoring=0;
