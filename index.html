@@ -631,7 +631,7 @@ function _hashPass(t){try{var b=new TextEncoder().encode(String(t||''));return c
 function _pullRoles(){try{if(!sbReady()||!navigator.onLine)return;fetch(sbBase()+'/rest/v1/roles_usuarios?select=*&limit=1000',{headers:sbHead()}).then(function(r){if(!r.ok){window._rolesOn=false;return null}return r.json()}).then(function(rows){if(!rows)return;window._rolesOn=true;var m={};rows.forEach(function(x){if(x&&x.nombre)m[x.nombre]=x});state.roles=m;try{store.set('obf4_roles',m)}catch(e){}try{if(typeof updPwField==='function'&&$('scrLogin')&&!$('scrLogin').classList.contains('hidden'))updPwField()}catch(e){}try{var nmL=(state.user&&state.user.supervisor)||'';var rL=m[nmL];if(rL&&!rL.bloqueado&&rL.rol!=='nuevo'&&!rL.pass&&nmL&&nmL!=='Luis Antonio Focon Colina'&&!window._askPass1&&$('scrLogin')&&$('scrLogin').classList.contains('hidden')){window._askPass1=1;setTimeout(_defPassVivo,700)}}catch(e){}
 /* solicitud directa del admin: "define tu contraseña" (botón 📨 en Roles y accesos) */
 try{var nmQ=(state.user&&state.user.supervisor)||'';var rQ=m[nmQ];var doneQ=Number(localStorage.getItem('obf4_pedpass_done')||0);if(rQ&&rQ.pedir_pass&&Number(rQ.pedir_pass)>doneQ&&!rQ.pass&&!rQ.bloqueado&&nmQ&&nmQ!=='Luis Antonio Focon Colina'&&$('scrLogin')&&$('scrLogin').classList.contains('hidden')){localStorage.setItem('obf4_pedpass_done',String(rQ.pedir_pass));setTimeout(_defPassVivo,400)}}catch(e){}try{if(typeof updAdminBox==='function')updAdminBox()}catch(e){}}).catch(function(){window._rolesOn=false})}catch(e){}}
-setTimeout(_pullRoles,1500);setInterval(_pullRoles,90000);
+setTimeout(_pullRoles,1500);setInterval(_pullRoles,20000);
 /* === UPD-01: roles operativo + cinturón de red + permisos === */
 function miRol(){var n=(state.user&&state.user.supervisor)||'';if(n==='Luis Antonio Focon Colina')return 'admin';var r=(state.roles||{})[n];if(r&&r.bloqueado)return 'bloqueado';if(r)return r.rol||'sup';return (state.user&&state.user._nuevo)?'nuevo':'sup'}
 function puedeEscribir(){var r=miRol();return r!=='nuevo'&&r!=='bloqueado'}
@@ -847,7 +847,7 @@ function updLive(p){const m=metaOf(p.id);const add=+$('rCant').value||0;const nv
 var KCU='obf4_cuadrillas';try{if(!state.cuadrillas)state.cuadrillas=store.get(KCU)||{}}catch(e){state.cuadrillas={}}
 var regCuad=null;
 function _pullCuadrillas(){try{if(!sbReady()||!navigator.onLine)return;fetch(sbBase()+'/rest/v1/cuadrillas?select=*&limit=500',{headers:sbHead()}).then(function(r){return r.ok?r.json():null}).then(function(rows){if(!rows)return;var m=state.cuadrillas||{};var enServer={};rows.forEach(function(x){if(x&&x.id){m[x.id]=x;enServer[x.id]=1}});state.cuadrillas=m;store.set(KCU,m);var faltan=Object.keys(m).filter(function(k){return !enServer[k]}).map(function(k){return m[k]});if(faltan.length&&typeof puedeEscribir==='function'&&puedeEscribir()){try{fetch(sbBase()+'/rest/v1/cuadrillas?on_conflict=id',{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(faltan)})}catch(e){}}try{var mr=document.getElementById('mReg');if(document.getElementById('rCuadPick')&&mr&&!mr.classList.contains('hidden'))renderCuadPick()}catch(e){}}).catch(function(){})}catch(e){}}
-setTimeout(_pullCuadrillas,2500);setInterval(_pullCuadrillas,90000);
+setTimeout(_pullCuadrillas,2500);setInterval(_pullCuadrillas,30000);
 /* ================= PANEL DE CONFIGURACIÓN (Admin): permisos por rol + MODO PRUEBAS ================= */
 var PERMS_GRUPOS=[
  {g:'📋 Avances y fotos (tarjeta de actividad)',items:[['av_reportar','Reportar avance del día'],['av_fotos_subir','Subir fotos'],['av_fotos_borrar','Borrar fotos'],['av_obs','Escribir observaciones'],['av_restr_int','Reportar restricción interna'],['av_restr_mina','Reportar restricción de mina']]},
@@ -861,7 +861,7 @@ var PERMS_GRUPOS=[
 ];
 var KRP='obf4_rolperms';try{if(!state.rolperms)state.rolperms=store.get(KRP)||{}}catch(e){state.rolperms={}}
 function _pullPerms(){try{if(!sbReady()||!navigator.onLine)return;fetch(sbBase()+'/rest/v1/roles_permisos?select=*&order=orden&limit=200',{headers:sbHead()}).then(function(r){return r.ok?r.json():null}).then(function(rows){if(!rows)return;var m={};rows.forEach(function(x){if(x&&x.rol)m[x.rol]=x});state.rolperms=m;store.set(KRP,m)}).catch(function(){})}catch(e){}}
-setTimeout(_pullPerms,2600);setInterval(_pullPerms,90000);
+setTimeout(_pullPerms,2600);setInterval(_pullPerms,30000);
 function _permDefault(rol,key){if(rol==='admin')return true;if(rol==='nuevo'||rol==='bloqueado')return false;if(key==='pend_responder')return rol==='log';return true}
 function permisosDe(rol){var r=(state.rolperms||{})[rol];return (r&&r.permisos)||{}}
 function puedeAcc(key){try{if(typeof esAdminReal==='function'&&esAdminReal())return true;var rol=(typeof miRol==='function')?miRol():'sup';if(rol==='admin')return true;if(rol==='nuevo'||rol==='bloqueado')return false;var P=permisosDe(rol);var v=Object.prototype.hasOwnProperty.call(P,key)?P[key]:_permDefault(rol,key);if(v===false)return false;if(key.indexOf('esp_')!==0){var d=(state.user&&state.user.disc)||'';if(d){var ek='esp_'+d;var ev=Object.prototype.hasOwnProperty.call(P,ek)?P[ek]:_permDefault(rol,ek);if(ev===false)return false}}return true}catch(e){return true}}
@@ -1145,7 +1145,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260704b13';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260704b14';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -1609,6 +1609,17 @@ async function _showRoles(){
    }});
  }
  draw();updGo();
+ /* refresco en vivo del panel: si no hay cambios sin enviar, baja los roles cada 7s y repinta solo si algo cambió */
+ var _rlPrev=JSON.stringify(rows||[]);
+ var _rlIv=setInterval(async function(){try{
+   if(!document.getElementById('_rolesOv')){clearInterval(_rlIv);return}
+   if(Object.keys(dirty).length)return;
+   var rws=await sbSelect('roles_usuarios','select=*&order=nombre');
+   var js=JSON.stringify(rws||[]);if(js===_rlPrev)return;_rlPrev=js;
+   map={};(rws||[]).forEach(function(r){if(r&&r.nombre)map[r.nombre]=r});
+   try{(state.partes||[]).forEach(function(p){if(p.supervisor&&p.supervisor!=='Carga inicial'&&!map[p.supervisor])map[p.supervisor]={nombre:p.supervisor,rol:'nuevo'}})}catch(e){}
+   names=Object.keys(map).sort();draw();
+ }catch(e){}},7000);
  document.getElementById('_rlAdd').onclick=function(){var v=(document.getElementById('_rlNew').value||'').trim();if(!v)return;if(!map[v]){map[v]={nombre:v,rol:'nuevo'};names=Object.keys(map).sort()}dirty[v]=dirty[v]||{};if(dirty[v].rol==null)dirty[v].rol='nuevo';document.getElementById('_rlNew').value='';updGo();draw()};
  document.getElementById('_rlGo').onclick=async function(){
    var ks=Object.keys(dirty);if(!ks.length){toast('No hay cambios que enviar');return}
@@ -1715,7 +1726,7 @@ try{  var progRows=Object.keys(state.prog||{}).filter(function(id){var _dT=state
 try{  var calRows=Object.keys(state.calend||{}).filter(function(f){return !tombHas('calendario',f)}).map(function(f){var c=state.calend[f];return {proyecto:proyecto,fecha:f,tipo:c.tipo,comentario:c.comentario||'',quien:c.quien||'',ts:c.ts||Date.now(),cell_at:(c.cell_at||null)}});calRows=onlyChanged('calendario',calRows,function(r){return r.fecha});if(calRows.length){await sbUpsert('calendario',calRows,'proyecto,fecha');commitSent(calRows);}await tombPurge('calendario','calendario','fecha',proyecto);}catch(_pe){_pushErr=_pushErr||_pe}
 try{  if(navigator.onLine&&state.pend){for(var _qi=0;_qi<state.pend.length;_qi++){var _pp=state.pend[_qi];var _cs=_pp.coments||[];for(var _qj=0;_qj<_cs.length;_qj++){var _c=_cs[_qj];if(_c.foto&&typeof _c.foto==='string'&&_c.foto.indexOf('data:')===0){try{var _ppath=safeName(DATA.proyecto)+'/Pendientes/'+safeName(_pp.id)+'_'+_c.ts+'.jpg';var _pup=await uploadFoto(_ppath,_c.foto);if(_pup&&_pup.ok){_c.foto=_pup.url;_pp.synced=false}}catch(_pe){}}}}if(typeof pendSave==='function')pendSave()}
   var _pend=(state.pend||[]).filter(function(x){return !x.synced});if(_pend.length){await sbUpsert('pendientes',_pend.map(function(x){return {id:x.id,proyecto:proyecto,tipo:x.tipo,descripcion:x.descripcion,supervisor:x.supervisor,disciplina:x.disciplina,ts:x.ts,cell_at:(x.cell_at||null),fecha:x.fecha,estado_coment:x.estado_coment||'',estado_por:x.estado_por||'',estado_ts:x.estado_ts||0,fotos:(x.fotos||[]),resuelto:!!x.resuelto,critico:!!x.critico,coments:x.coments||[],fecha_necesita:x.fecha_necesita||null}}),'id');_pend.forEach(function(x){x.synced=true});if(typeof pendSave==='function')pendSave()}}catch(_pe){_pushErr=_pushErr||_pe}
-try{  var stEps=stormEpisodes().filter(function(ep){return !(typeof tombHas==='function'&&tombHas('tormenta',ep.iniId))});if(stEps.length){await sbUpsert('tormenta',stEps.map(function(ep){var durm=Math.max(0,Math.round(((ep.fin||Date.now())-ep.ini)/60000));return {id:ep.iniId||(ep.zona+'_'+ep.ini),proyecto:proyecto,zona:ep.zona,nivel:ep.nivel,quien_inicio:ep.iniQuien||null,ts_inicio:ep.ini,fecha_inicio:isoLocal(ep.ini),hora_inicio:fmtHora(ep.ini),quien_fin:ep.finQuien||null,ts_fin:ep.fin||null,fecha_fin:ep.fin?isoLocal(ep.fin):null,hora_fin:ep.fin?fmtHora(ep.fin):null,dur_min:ep.fin?durm:null,abierto:!ep.fin}}),'id')}}catch(_pe){_pushErr=_pushErr||_pe}
+try{  var stEps=stormEpisodes().filter(function(ep){return !(typeof tombHas==='function'&&tombHas('tormenta',ep.iniId))});if(stEps.length){var stRows=stEps.map(function(ep){var durm=Math.max(0,Math.round(((ep.fin||Date.now())-ep.ini)/60000));return {id:ep.iniId||(ep.zona+'_'+ep.ini),proyecto:proyecto,zona:ep.zona,nivel:ep.nivel,quien_inicio:ep.iniQuien||null,ts_inicio:ep.ini,fecha_inicio:isoLocal(ep.ini),hora_inicio:fmtHora(ep.ini),quien_fin:ep.finQuien||null,ts_fin:ep.fin||null,fecha_fin:ep.fin?isoLocal(ep.fin):null,hora_fin:ep.fin?fmtHora(ep.fin):null,dur_min:ep.fin?durm:null,abierto:!ep.fin}});stRows=onlyChanged('tormenta',stRows,function(r){return r.id});if(stRows.length){await sbUpsert('tormenta',stRows,'id');commitSent(stRows);}}}catch(_pe){_pushErr=_pushErr||_pe}
 try{  var rtEv=((state.restot&&state.restot.log)||[]).filter(function(e){return !e.synced});for(var rti=0;rti<rtEv.length;rti++){var rrr=rtEv[rti];var urls=[];var ffs=rrr.fotos||[];for(var rfi=0;rfi<ffs.length;rfi++){var fdd=ffs[rfi];if(typeof fdd==='string'&&fdd.indexOf('http')===0){urls.push(fdd);continue}var fpp=safeName(proyecto)+'/Restricciones generales/'+(rrr.fecha||'')+'/'+rrr.id+'_'+rfi+'.jpg';var upp=await uploadFoto(fpp,fdd);urls.push(upp.ok?upp.url:fdd)}await sbUpsert('restricciones_generales',[{id:rrr.id,proyecto:proyecto,descripcion:rrr.descripcion,hora_ini:rrr.hora_ini,hora_fin:rrr.hora_fin,fecha:rrr.fecha,quien:rrr.quien,fotos:urls,ts:rrr.ts}],'id');rrr.fotos=urls;rrr.synced=true}if(rtEv.length&&typeof KRT!=='undefined')store.set(KRT,state.restot);}catch(_pe){_pushErr=_pushErr||_pe}
 try{  var ri=(state.reinicios||[]).filter(function(r){return !r.synced});
   if(ri.length){for(var i=0;i<ri.length;i++){var rx=ri[i];var qf='proyecto=eq.'+encodeURIComponent(proyecto)+'&partida_id=eq.'+encodeURIComponent(rx.partida_id);
@@ -2339,6 +2350,38 @@ window.addEventListener('beforeunload',function(){try{var l2=lee();if(l2&&l2.id=
 }catch(e){}})();
 
 if(!window._tabBloqueada&&state.user){selDisc=state.user.disc;$('inSup').value=state.user.supervisor;enterApp()}
+
+/* === 🔔 CAMPANA EN VIVO: escucha los cambios del servidor por WebSocket y jala AL INSTANTE.
+       Si el WebSocket falla (red mala, proxy), el sondeo de siempre sigue de respaldo. === */
+(function(){
+ var ws=null,hb=null,tries=0,_deb={};
+ /* OJO: tormenta NO va aquí (ya tiene su canal de 1s y cada push la re-toca — sería un bucle). bitacora/dispositivos tampoco (laten cada 15s). */
+ var TABLAS_VIVO=['roles_usuarios','pendientes','roles_permisos','cuadrillas','app_config','partes','metrados','nuevas','reportabilidad','programacion','calendario','restricciones_generales','ediciones','reinicios','dias_habilitados'];
+ function jala(t){if(!t||_deb[t])return;_deb[t]=setTimeout(function(){delete _deb[t];try{
+   if(t==='roles_usuarios'){if(typeof _pullRoles==='function')_pullRoles()}
+   else if(t==='roles_permisos'){if(typeof _pullPerms==='function')_pullPerms()}
+   else if(t==='cuadrillas'){if(typeof _pullCuadrillas==='function')_pullCuadrillas()}
+   else if(t==='app_config'){if(typeof _mpPoll==='function')_mpPoll()}
+   else{if(!window._impBusy&&!window._tabBloqueada&&typeof syncNow==='function'&&typeof syncing!=='undefined'&&!syncing&&typeof _editing==='function'&&!_editing())syncNow(true)}
+ }catch(e){}},500)}
+ function arma(){try{
+  if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine&&state&&state.user))return;
+  if(ws&&(ws.readyState===0||ws.readyState===1))return;
+  var url=sbBase().replace(/^http/,'ws')+'/realtime/v1/websocket?apikey='+encodeURIComponent(state.cfg.supaKey)+'&vsn=1.0.0';
+  ws=new WebSocket(url);
+  ws.onopen=function(){tries=0;window._rtVivo=1;
+   try{ws.send(JSON.stringify({topic:'realtime:vivo',event:'phx_join',payload:{config:{postgres_changes:TABLAS_VIVO.map(function(t){return {event:'*',schema:'public',table:t}})}},ref:'1'}))}catch(e){}
+   if(hb)clearInterval(hb);
+   hb=setInterval(function(){try{if(ws&&ws.readyState===1)ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(Math.floor(Math.random()*1e9))}))}catch(e){}},25000);
+  };
+  ws.onmessage=function(ev){try{var m=JSON.parse(ev.data);if(m&&m.event==='postgres_changes'){var d=m.payload&&m.payload.data;if(d&&d.table){window._rtN=(window._rtN||0)+1;window._rtUlt=d.table+' '+(d.type||'');jala(d.table)}}}catch(e){}};
+  ws.onclose=function(){window._rtVivo=0;if(hb){clearInterval(hb);hb=null}ws=null;var espera=Math.min(30000,2000*(++tries));setTimeout(arma,espera)};
+  ws.onerror=function(){try{if(ws)ws.close()}catch(e){}};
+ }catch(e){}}
+ setTimeout(arma,3000);
+ window.addEventListener('online',function(){setTimeout(arma,1200)});
+ document.addEventListener('visibilitychange',function(){if(!document.hidden)arma()});
+})();
 </script>
 <div id="repPrint" class="rep-print"></div>
 </body>
