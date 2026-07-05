@@ -1327,7 +1327,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b57';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b58';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -2755,6 +2755,10 @@ try{
   if(tx.value.trim().toUpperCase()!=='BORRAR TODO')return;
   go.disabled=true;tx.disabled=true;window._impBusy=1;
   try{
+   window._mpRestoring=1;
+   est.textContent='🧊 Congelando todos los equipos (que nadie escriba mientras se borra)…';
+   try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:true,updated_at:new Date().toISOString()})})}catch(_efz){}
+   await new Promise(function(_r){setTimeout(_r,11000)});
    est.textContent='1/4 · borrando archivos de fotos…';
    var paths=[];
    try{(await sbSelect('fotos','select=path')).forEach(function(r){if(r.path)paths.push(r.path)})}catch(_e){}
@@ -2770,11 +2774,14 @@ try{
     for(var _bi=0;_bi<_bakedRows.length;_bi+=200){var _lote=_bakedRows.slice(_bi,_bi+200);await fetch(sbBase()+'/rest/v1/metrados?on_conflict=proyecto,partida_id',{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(_lote)})}}catch(_e4b){}
    est.textContent='3/4 · avisando a los equipos…';
    try{await fetch(sbBase()+'/rest/v1/dispositivos?proyecto=eq.'+encodeURIComponent(DATA.proyecto),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'mpwipe',cmd_ts:(typeof nowSrv==='function'?nowSrv():Date.now()),updated_at:new Date().toISOString()})})}catch(_e5){}
+   est.textContent='descongelando el servidor…';
+   try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,modo_prueba:false,updated_at:new Date().toISOString()})})}catch(_efz2){}
+   window._mpRestoring=0;
    est.textContent='4/4 · limpiando este equipo…';
    try{['obf4_partes','obf4_nuevas','obf4_meta','obf4_repo','obf4_reinicios','obf4_edits','obf4_prog','obf4_calend','obf4_storm','obf4_restot','obf4_pend','obf4_delp','obf4_sent','obf4_cambios','obf4_progdel','obf4_cuadrillas','obf4_restrpart','obf4_diasopen','obf4_dpdone','obf4_pddone','obf4_iflogq'].forEach(function(k){try{localStorage.removeItem(k)}catch(_ek){}});Object.keys(localStorage).forEach(function(k){if(k.indexOf('obf4_tomb_')===0){try{localStorage.removeItem(k)}catch(_ek2){}}})}catch(_e6){}
    est.textContent='✅ Base vaciada. Reiniciando…';
    setTimeout(function(){location.reload()},1200);
-  }catch(e){est.textContent='⚠ Error: '+e;go.disabled=false;tx.disabled=false;window._impBusy=0}
+  }catch(e){est.textContent='⚠ Error: '+e;go.disabled=false;tx.disabled=false;window._impBusy=0;window._mpRestoring=0;try{await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})})}catch(_efz3){}}
  };
 }catch(e){toast('Error: '+e)}}
 /* === Selector universal de fotos: tomar / galería / una ya subida ESE día y de la especialidad === */
