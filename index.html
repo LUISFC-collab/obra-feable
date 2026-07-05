@@ -654,7 +654,8 @@ async function _fotoPapelera(delUrl,rawFetch){try{
 }catch(e){}}
 /* cinturón de red: el "Solo ver"/bloqueado NO puede escribir en el servidor (salvo su registro de rol, su heartbeat de dispositivo y su solicitud de permisos) */
 (function(){var _f0=window.fetch;window.fetch=function(u,o){try{var m=((o&&o.method)||'GET').toUpperCase();
-if(window._modoPrueba&&m!=='GET'&&typeof u==='string'&&typeof sbBase==='function'&&state&&state.cfg&&state.cfg.supaUrl&&u.indexOf(sbBase())===0){var okmp=(u.indexOf('/app_config')>=0)||(u.indexOf('/bitacora')>=0)||(u.indexOf('/dispositivos')>=0);if(!okmp)return Promise.resolve(new Response(m==='POST'?'[]':'',{status:m==='POST'?201:204,headers:{'Content-Type':'application/json'}}))}
+if(window._mpFreeze&&!window._mpRestoring&&m!=='GET'&&typeof u==='string'&&typeof sbBase==='function'&&state&&state.cfg&&state.cfg.supaUrl&&u.indexOf(sbBase())===0){var okfr=(u.indexOf('/app_config')>=0)||(u.indexOf('/dispositivos')>=0);if(!okfr)return Promise.resolve(new Response(m==='POST'?'[]':'',{status:m==='POST'?201:204,headers:{'Content-Type':'application/json'}}))}
+if(window._modoPrueba&&!window._mpRestoring&&m==='DELETE'&&typeof u==='string'&&u.indexOf('/storage/v1/object/')>=0)return Promise.resolve(new Response('',{status:200,headers:{'Content-Type':'application/json'}}));
 if(m==='DELETE'&&typeof u==='string'&&u.indexOf('/rest/v1/fotos?')>=0&&u.indexOf('fotos_borradas')<0&&!window._modoPrueba&&typeof sbBase==='function'&&state&&state.cfg&&state.cfg.supaUrl&&u.indexOf(sbBase())===0){var _au=u,_ao=o;return _fotoPapelera(_au,_f0).then(function(){return _f0(_au,_ao)}).catch(function(){return _f0(_au,_ao)})}
 if(m!=='GET'&&typeof u==='string'&&typeof sbBase==='function'&&state&&state.cfg&&state.cfg.supaUrl&&u.indexOf(sbBase())===0&&typeof miRol==='function'){var _r=miRol();if(_r==='nuevo'||_r==='bloqueado'){var okd=(u.indexOf('/roles_usuarios')>=0)||(u.indexOf('/dispositivos')>=0)||(u.indexOf('/rpc/')>=0)||(u.indexOf('/pendientes')>=0&&o&&typeof o.body==='string'&&o.body.indexOf('permiso')>=0);if(!okd){try{toast('👁 Solo visualización — no puedes cambiar nada')}catch(_e){}return Promise.resolve(new Response('[]',{status:403,headers:{'Content-Type':'application/json'}}))}}}
 /* tiempo máximo a toda llamada al servidor: si la señal se corta a mitad, el fetch NO se queda colgado para siempre (eso dejaba el sync trabado hasta reiniciar la app) */
@@ -918,7 +919,7 @@ function _gateAcc(key,label){if(puedeAcc(key))return true;try{toast('⛔ Tu rol 
 /* ---- MODO PRUEBAS (solo este equipo del admin): todo se ve real, nada se guarda ---- */
 window._modoPrueba=(function(){try{return localStorage.getItem('obf4_modoprueba')==='1'}catch(e){return false}})();
 function _mpBar(){var b=document.getElementById('_mpBar');if(!window._modoPrueba){if(b)b.remove();var oc=document.getElementById('_mpCss');if(oc)oc.remove();return}
- if(!b){b=document.createElement('div');b.id='_mpBar';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483646;background:#FFD100;color:#3A2A00;font:800 13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:8px 10px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.4);letter-spacing:.02em';b.innerHTML='⚠️ SERVIDOR EN <u>MODO PRUEBA</u> — los cambios NO cuentan (fotos, datos y subidas no se guardan) · <span id="_mpBarOff" style="text-decoration:underline;cursor:pointer;font-weight:900">FINALIZAR</span>';document.body.appendChild(b);var off=document.getElementById('_mpBarOff');if(off){off.style.display=(typeof esAdminReal==='function'&&esAdminReal())?'':'none';off.onclick=function(){_mpToggle()}}}
+ if(!b){b=document.createElement('div');b.id='_mpBar';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483646;background:#FFD100;color:#3A2A00;font:800 13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:8px 10px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.4);letter-spacing:.02em';b.innerHTML='⚠️ MODO PRUEBAS <u>EN VIVO</u> — todo funciona DE VERDAD entre ustedes; al FINALIZAR, TODO volverá a como estaba · <span id="_mpBarOff" style="text-decoration:underline;cursor:pointer;font-weight:900">FINALIZAR</span>';document.body.appendChild(b);var off=document.getElementById('_mpBarOff');if(off){off.style.display=(typeof esAdminReal==='function'&&esAdminReal())?'':'none';off.onclick=function(){_mpToggle()}}}
  try{var h=b.offsetHeight||34;var st=document.getElementById('_mpCss');if(!st){st=document.createElement('style');st.id='_mpCss';document.head.appendChild(st)}st.textContent='body{margin-top:'+h+'px!important}';b.style.height='';}catch(e){}}
 try{setInterval(function(){try{_mpBar()}catch(e){}},1500)}catch(e){}
 function _mpSnapshot(){try{var s={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('obf4_')===0&&k!=='obf4_modoprueba'&&k!=='obf4_mpbackup')s[k]=localStorage.getItem(k)}localStorage.setItem('obf4_mpbackup',JSON.stringify(s));return true}catch(e){return false}}
@@ -928,26 +929,91 @@ function _mpApply(on,quien){try{
  else if(!on&&window._modoPrueba){window._modoPrueba=false;try{localStorage.setItem('obf4_modoprueba','')}catch(e){}var ok=_mpRestore();_mpBar();_mpCartel('off',ok);}
 }catch(e){}}
 async function _mpServer(on){try{var r=await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({modo_prueba:!!on,mp_quien:(state.user&&state.user.supervisor)||'',mp_ts:Date.now(),updated_at:new Date().toISOString()})});return r.ok}catch(e){return false}}
-function _mpToggle(){if(!(typeof esAdminReal==='function'&&esAdminReal())){toast('Solo el administrador');return}
- if(!window._modoPrueba){
-  if(!confirm('🔴 ¿EN REALIDAD desea activar el MODO PRUEBA para TODOS LOS EQUIPOS?\n\nTodos verán la barra amarilla y podrán probar juntos: todo se ve normal, pero NINGÚN cambio cuenta (fotos, cargas, subidas).\n\nAl finalizar, todos vuelven a la información real.'))return;
-  _mpServer(true).then(function(ok){if(!ok)toast('⚠ Sin señal: el modo prueba quedó solo en este equipo')});
+/* ===== MODO PRUEBAS EN VIVO: copia y restauración de TODA la base en el server ===== */
+var _MP_TABLAS=['partes','fotos','fotos_borradas','metrados','nuevas','ediciones','programacion','calendario','reportabilidad','reinicios','pendientes','cambios','conflictos','restricciones_generales','restricciones_partida','tormenta','dias_habilitados','borrados','cuadrillas','bitacora','interf_log','presencia_lapsos','avance_semana','metas_semana','prog_semana','razones_noavance','semanas','roles_usuarios','roles_permisos'];
+function _mpProcUI(tit){var old=document.getElementById('_mpProc');if(old)old.remove();var ov=document.createElement('div');ov.id='_mpProc';ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(8,8,18,.92);display:flex;align-items:center;justify-content:center;padding:20px';ov.innerHTML='<div style="background:#fff;border-radius:16px;padding:22px;max-width:420px;width:100%;text-align:center"><div id="_mpPT" style="font-weight:900;font-size:16px;color:#1F3864;margin-bottom:12px"></div><div style="background:#EEF2F7;border-radius:99px;height:14px;overflow:hidden"><div id="_mpPB" style="height:100%;width:0%;background:#1E7A46;transition:width .3s"></div></div><div id="_mpPS" style="margin-top:10px;font-size:13px;color:#4A5568;font-weight:700"></div><div id="_mpPC" style="margin-top:6px;font-size:24px;font-weight:900;color:#B45309"></div></div>';document.body.appendChild(ov);document.getElementById('_mpPT').textContent=tit;return ov}
+function _mpProcSet(pct,sub){var b=document.getElementById('_mpPB');if(b)b.style.width=Math.round(pct)+'%';var s=document.getElementById('_mpPS');if(s)s.textContent=sub||''}
+var _mpEtaFin=0,_mpEtaIv=null;
+function _mpEta(msRest){_mpEtaFin=Date.now()+msRest;if(_mpEtaIv)return;_mpEtaIv=setInterval(function(){var c=document.getElementById('_mpPC');if(!c){clearInterval(_mpEtaIv);_mpEtaIv=null;return}var s=Math.max(0,Math.ceil((_mpEtaFin-Date.now())/1000));c.textContent='⏳ faltan ~'+s+' seg'},250)}
+function _mpEtaStop(){if(_mpEtaIv){clearInterval(_mpEtaIv);_mpEtaIv=null}var c=document.getElementById('_mpPC');if(c)c.textContent=''}
+async function _mpFetchAll(tb,pk0){var out=[],off=0;for(;;){var r=await fetch(sbBase()+'/rest/v1/'+tb+'?select=*&order='+pk0+'&limit=1000&offset='+off,{headers:sbHead()});if(!r.ok)throw new Error(tb+' HTTP '+r.status);var j=await r.json();out=out.concat(j||[]);if(!j||j.length<1000)break;off+=1000}return out}
+async function _mpGz(str){try{if(typeof CompressionStream==='undefined')return null;var cs=new CompressionStream('gzip');return await new Response(new Blob([str]).stream().pipeThrough(cs)).blob()}catch(e){return null}}
+async function _mpUngz(blob){try{var ds=new DecompressionStream('gzip');return await new Response(blob.stream().pipeThrough(ds)).text()}catch(e){return null}}
+async function _mpStart(){window._mpBusyProc=1;_mpProcUI('🟡 El server iniciará pruebas — creando copia de seguridad…');
+ try{
+  var snap={_ts:Date.now(),_ver:(typeof APP_VER!=='undefined'?APP_VER:''),tablas:{}};var t0=Date.now();
+  for(var i=0;i<_MP_TABLAS.length;i++){var tb=_MP_TABLAS[i];var pk0=(_impPk(tb)||'id').split(',')[0];
+   _mpProcSet(i/_MP_TABLAS.length*80,'📸 Copiando '+tb+' ('+(i+1)+'/'+_MP_TABLAS.length+')');
+   if(i>0)_mpEta(((Date.now()-t0)/i)*(_MP_TABLAS.length-i)+2500);
+   snap.tablas[tb]=await _mpFetchAll(tb,pk0);}
+  _mpProcSet(85,'🗜 Comprimiendo la copia…');
+  var raw=JSON.stringify(snap);var gz=await _mpGz(raw);var body=gz||new Blob([raw]);var fn=gz?'mp_snapshot.json.gz':'mp_snapshot.json';
+  _mpProcSet(92,'☁️ Subiendo la copia al server ('+(body.size/1048576).toFixed(1)+' MB)…');
+  var up=await fetch(sbBase()+'/storage/v1/object/obra-fotos/_snapshots/'+fn,{method:'POST',headers:sbHead({'x-upsert':'true','Content-Type':'application/octet-stream'}),body:body});
+  if(!up.ok)throw new Error('subida de la copia HTTP '+up.status);
+  try{localStorage.setItem('obf4_mpsnapfn',fn)}catch(e){}
+  _mpProcSet(97,'📢 Avisando a todos los equipos…');
+  var okv=await _mpServer(true);if(!okv)throw new Error('no se pudo avisar al server');
+  _mpEtaStop();_mpProcSet(100,'✅ Copia lista. ¡PRUEBAS EN VIVO activadas!');
+  setTimeout(function(){var o=document.getElementById('_mpProc');if(o)o.remove()},1600);
   _mpApply(true,(state.user&&state.user.supervisor)||'');
+ }catch(e){_mpEtaStop();var o=document.getElementById('_mpProc');if(o)o.remove();alert('❌ NO se activaron las pruebas (la base NO se tocó):\n'+(e&&e.message||e))}
+ window._mpBusyProc=0}
+async function _mpEnd(){window._mpBusyProc=1;window._mpRestoring=1;_mpProcUI('📦 Restaurando la base tal como estaba…');
+ try{
+  _mpProcSet(2,'🧊 Congelando todos los equipos…');
+  var fz=await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({modo_prueba:false,mp_rest:true,updated_at:new Date().toISOString()})});
+  if(!fz.ok)throw new Error('no se pudo congelar (HTTP '+fz.status+')');
+  _mpProcSet(6,'📦 Descargando y descomprimiendo la copia…');_mpEta(6000);
+  var fn='mp_snapshot.json.gz';try{fn=localStorage.getItem('obf4_mpsnapfn')||fn}catch(e){}
+  var dl=await fetch(sbBase()+'/storage/v1/object/obra-fotos/_snapshots/'+fn+'?nc='+Date.now(),{headers:sbHead()});
+  if(!dl.ok&&fn.slice(-3)==='.gz'){fn='mp_snapshot.json';dl=await fetch(sbBase()+'/storage/v1/object/obra-fotos/_snapshots/'+fn+'?nc='+Date.now(),{headers:sbHead()})}
+  if(!dl.ok)throw new Error('no encuentro la copia de seguridad (HTTP '+dl.status+')');
+  var blob=await dl.blob();var raw=(fn.slice(-3)==='.gz')?await _mpUngz(blob):await blob.text();if(!raw)raw=await blob.text();
+  var snap=JSON.parse(raw);if(!snap||!snap.tablas)throw new Error('copia dañada');
+  var t0=Date.now(),n=_MP_TABLAS.length;
+  for(var i=0;i<n;i++){var tb=_MP_TABLAS[i];var rows=snap.tablas[tb]||[];var pk=_impPk(tb)||'id';var pk0=pk.split(',')[0];
+   _mpProcSet(8+i/n*86,'♻️ Restaurando '+tb+' ('+(i+1)+'/'+n+') — '+rows.length+' fila(s)');
+   if(i>0)_mpEta(((Date.now()-t0)/i)*(n-i)+3000);
+   var del=await fetch(sbBase()+'/rest/v1/'+tb+'?'+pk0+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
+   if(!del.ok)throw new Error('limpiando '+tb+' HTTP '+del.status);
+   for(var c=0;c<rows.length;c+=200){var lote=rows.slice(c,c+200);
+    var ins=await fetch(sbBase()+'/rest/v1/'+tb+'?on_conflict='+encodeURIComponent(pk),{method:'POST',headers:sbHead({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(lote)});
+    if(!ins.ok)throw new Error('reinsertando '+tb+' HTTP '+ins.status)}}
+  _mpEtaStop();_mpProcSet(96,'📢 Reiniciando todos los equipos…');
+  await fetch(sbBase()+'/rest/v1/app_config?id=eq.1',{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({mp_rest:false,updated_at:new Date().toISOString()})});
+  try{await fetch(sbBase()+'/rest/v1/dispositivos?device_id=neq.'+encodeURIComponent(deviceId()),{method:'PATCH',headers:sbHead({'Prefer':'return=minimal'}),body:JSON.stringify({cmd:'debug',cmd_ts:Date.now(),updated_at:new Date().toISOString()})})}catch(e){}
+  window._modoPrueba=false;try{localStorage.setItem('obf4_modoprueba','')}catch(e){}try{localStorage.removeItem('obf4_mpbackup')}catch(e){}
+  _mpProcSet(100,'✅ Base restaurada TAL COMO ESTABA. Este equipo también se reiniciará…');
+  setTimeout(function(){window._mpRestoring=0;window._mpBusyProc=0;if(typeof _debugReset==='function')_debugReset(true);else location.reload()},2200);
+ }catch(e){_mpEtaStop();window._mpRestoring=0;window._mpBusyProc=0;var o=document.getElementById('_mpProc');if(o)o.remove();
+  if(confirm('❌ Error restaurando: '+(e&&e.message||e)+'\n\nLA COPIA SIGUE GUARDADA en el server — no se perdió nada.\n\n¿REINTENTAR la restauración ahora?')){_mpEnd();return}
+  alert('Quedó pendiente: vuelve a tocar el botón del MODO PRUEBAS para reintentar.')}}
+function _mpToggle(){if(!(typeof esAdminReal==='function'&&esAdminReal())){toast('Solo el administrador');return}
+ if(window._mpBusyProc){toast('⏳ Ya hay un proceso en marcha, espera…');return}
+ if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine)){toast('⚠ Sin señal: el MODO PRUEBAS EN VIVO necesita conexión');return}
+ if(window._mpFreeze&&!window._modoPrueba){if(confirm('⚠️ Hay una RESTAURACIÓN PENDIENTE de las últimas pruebas.\n\n¿Reintentarla ahora?'))_mpEnd();return}
+ if(!window._modoPrueba){
+  if(!confirm('🟡 ¿Activar el MODO PRUEBAS EN VIVO para TODOS LOS EQUIPOS?\n\n1) El server creará primero una COPIA DE SEGURIDAD de toda la base (verás el contador).\n2) Todos verán la barra amarilla y podrán probar JUNTOS: todo funciona de verdad y se ve entre ustedes al instante.\n3) Al FINALIZAR, la base volverá EXACTAMENTE a como estaba.'))return;
+  _mpStart();
  }else{
-  _mpServer(false).then(function(ok){if(!ok)toast('⚠ Sin señal: no se pudo avisar al servidor')});
-  _mpApply(false);
+  if(!confirm('⚠️ ¿FINALIZAR las pruebas?\n\nSe descartará TODO lo hecho durante las pruebas (fotos, cargas, roles, cambios…) y la base volverá EXACTAMENTE a como estaba.\n\nTodos los equipos se reiniciarán solos.'))return;
+  _mpEnd();
  }}
 var _mpPollBusy=false;
 async function _mpPoll(){try{if(_mpPollBusy)return;_mpPollBusy=true;if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine)){_mpPollBusy=false;return}
- var r=await fetch(sbBase()+'/rest/v1/app_config?select=modo_prueba,mp_quien&id=eq.1',{headers:sbHead()});if(!r.ok){_mpPollBusy=false;return}
- var j=await r.json();var srv=!!(j&&j[0]&&j[0].modo_prueba);var quien=(j&&j[0]&&j[0].mp_quien)||'el administrador';
+ var r=await fetch(sbBase()+'/rest/v1/app_config?select=modo_prueba,mp_quien,mp_rest&id=eq.1',{headers:sbHead()});if(!r.ok){_mpPollBusy=false;return}
+ var j=await r.json();var srv=!!(j&&j[0]&&j[0].modo_prueba);var quien=(j&&j[0]&&j[0].mp_quien)||'el administrador';var rest=!!(j&&j[0]&&j[0].mp_rest);
+ if(!window._mpRestoring){window._mpFreeze=rest?1:0;_mpRestBar(rest&&!(typeof esAdminReal==='function'&&esAdminReal()));}
  if(srv&&!window._modoPrueba)_mpApply(true,quien);
  else if(!srv&&window._modoPrueba)_mpApply(false);
  _mpPollBusy=false;}catch(e){_mpPollBusy=false}}
+function _mpRestBar(on){var b=document.getElementById('_mpRestBar');if(!on){if(b)b.remove();return}
+ if(b)return;b=document.createElement('div');b.id='_mpRestBar';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:#1F3864;color:#fff;padding:12px 14px;font:800 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;text-align:center;box-shadow:0 -2px 12px rgba(0,0,0,.4)';b.innerHTML='⏳ El administrador está RESTAURANDO la base tras las pruebas…<br><span style="font-weight:600;font-size:12px">No toques nada: tu equipo se reiniciará solo en un momento.</span>';document.body.appendChild(b)}
 setTimeout(_mpPoll,3000);setInterval(_mpPoll,8000);
 function _mpCartel(cual,ok){var prev=document.getElementById('_mpCartel');if(prev)prev.remove();var ov=document.createElement('div');ov.id='_mpCartel';ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(8,8,8,.84);display:flex;align-items:center;justify-content:center;padding:18px';
- if(cual==='on'){ov.innerHTML='<div style="max-width:480px;width:100%;background:#FFD100;color:#231A00;border-radius:18px;padding:26px 20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)"><div style="font-size:54px;line-height:1">🧪</div><div style="font-size:23px;font-weight:900;margin-top:8px">MODO PRUEBA ACTIVADO</div>'+(ok?('<div style="font-size:12.5px;font-weight:800;margin-top:4px;opacity:.85">activado por '+esc(ok)+' — para TODOS los equipos</div>'):'')+'<div style="font-size:14.5px;font-weight:700;margin-top:10px;line-height:1.7">Todo se ve y funciona REAL,<br>pero <u>NADA se guarda en el servidor</u>.<br>La barra amarilla te lo recordará en todas las pantallas.</div><button id="_mpOk" style="margin-top:18px;background:#231A00;color:#FFD100;border:0;border-radius:12px;padding:14px 26px;font-size:16px;font-weight:900;cursor:pointer;width:100%">ENTENDIDO — EMPEZAR PRUEBAS 🧪</button></div>';}
- else{ov.innerHTML='<div style="max-width:500px;width:100%;background:#0C5132;color:#EAFBF1;border-radius:18px;padding:26px 20px;box-shadow:0 20px 60px rgba(0,0,0,.6)"><div style="text-align:center;font-size:54px;line-height:1">✅</div><div style="text-align:center;font-size:23px;font-weight:900;margin-top:8px">MODO PRUEBA FINALIZADO</div><div style="font-size:14.5px;font-weight:800;margin-top:14px;line-height:2">'+(ok!==false?'✔ Se restableció la app con la información REAL':'⚠ No había respaldo local — se recargará todo del servidor')+'<br>✔ Se descartaron TODOS los cambios de prueba<br>✔ Se regresó a la carga de datos al servidor<br>✔ Fotos, cargas y subidas vuelven a contar</div><button id="_mpOk" style="display:block;width:100%;margin-top:18px;background:#EAFBF1;color:#0C5132;border:0;border-radius:12px;padding:14px 26px;font-size:16px;font-weight:900;cursor:pointer">VOLVER A LA APP (datos reales) ✅</button></div>';}
+ if(cual==='on'){ov.innerHTML='<div style="max-width:480px;width:100%;background:#FFD100;color:#231A00;border-radius:18px;padding:26px 20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)"><div style="font-size:54px;line-height:1">🧪</div><div style="font-size:23px;font-weight:900;margin-top:8px">MODO PRUEBA ACTIVADO</div>'+(ok?('<div style="font-size:12.5px;font-weight:800;margin-top:4px;opacity:.85">activado por '+esc(ok)+' — para TODOS los equipos</div>'):'')+'<div style="font-size:14.5px;font-weight:700;margin-top:10px;line-height:1.7">Prueben JUNTOS lo que quieran:<br>todo funciona DE VERDAD y se ve entre ustedes al instante.<br><u>Al FINALIZAR, la base volverá EXACTAMENTE a como estaba</u>.<br>La barra amarilla te lo recordará en todas las pantallas.</div><button id="_mpOk" style="margin-top:18px;background:#231A00;color:#FFD100;border:0;border-radius:12px;padding:14px 26px;font-size:16px;font-weight:900;cursor:pointer;width:100%">ENTENDIDO — EMPEZAR PRUEBAS 🧪</button></div>';}
+ else{ov.innerHTML='<div style="max-width:500px;width:100%;background:#0C5132;color:#EAFBF1;border-radius:18px;padding:26px 20px;box-shadow:0 20px 60px rgba(0,0,0,.6)"><div style="text-align:center;font-size:54px;line-height:1">✅</div><div style="text-align:center;font-size:23px;font-weight:900;margin-top:8px">MODO PRUEBA FINALIZADO</div><div style="font-size:14.5px;font-weight:800;margin-top:14px;line-height:2">'+(ok!==false?'✔ La base volvió EXACTAMENTE a como estaba (restaurada por el administrador)':'⚠ No había respaldo local — se recargará todo del servidor')+'<br>✔ Se descartaron TODOS los cambios de prueba<br>✔ Se regresó a la carga de datos al servidor<br>✔ Fotos, cargas y subidas vuelven a contar</div><button id="_mpOk" style="display:block;width:100%;margin-top:18px;background:#EAFBF1;color:#0C5132;border:0;border-radius:12px;padding:14px 26px;font-size:16px;font-weight:900;cursor:pointer">VOLVER A LA APP (datos reales) ✅</button></div>';}
  document.body.appendChild(ov);
  document.getElementById('_mpOk').onclick=function(){ov.remove();if(cual==='off'){try{location.reload()}catch(e){}}else{_mpBar()}};}
 /* ---- Panel de Configuración (Admin) ---- */
@@ -1210,7 +1276,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b47';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b48';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -1566,7 +1632,7 @@ async function _backup(){
  window._bkInfo={tablas_ok:tablasOk,tablas_total:TABLAS.length,filas:filasTot,fotos_ok:okF,fotos_total:fRows.length,bytes_db:dbBytes,bytes_fotos:bytesF,html:htmlOk,errores:tablasErr.length+failF};
 }
 /* === 📥 RESTAURAR BACKUP (admin): lee el ZIP del "Backup TOTAL" (o la carpeta descomprimida) y deja el servidor EXACTAMENTE como esa copia === */
-function _impPk(t){return ({metrados:'proyecto,partida_id',partes:'client_id',fotos:'foto_id',programacion:'proyecto,partida_id',borrados:'client_id',pendientes:'id',cambios:'id',conflictos:'id',nuevas:'proyecto,partida_id',calendario:'proyecto,fecha',restricciones_partida:'partida_id',dias_habilitados:'proyecto,fecha',bitacora:'nombre,dia',ediciones:'proyecto,partida_id',reinicios:'rid',reportabilidad:'rid',restricciones_generales:'id',tormenta:'id',roles_usuarios:'nombre',cuadrillas:'id',roles_permisos:'rol',fotos_borradas:'id',avance_semana:'proyecto,semana_id,partida_id',metas_semana:'proyecto,semana_id,partida_id',prog_semana:'proyecto,semana_id,partida_id',razones_noavance:'proyecto,semana_id,partida_id,fecha',semanas:'proyecto,semana_id'})[t]||null}
+function _impPk(t){return ({metrados:'proyecto,partida_id',partes:'client_id',fotos:'foto_id',programacion:'proyecto,partida_id',borrados:'client_id',pendientes:'id',cambios:'id',conflictos:'id',nuevas:'proyecto,partida_id',calendario:'proyecto,fecha',restricciones_partida:'partida_id',dias_habilitados:'proyecto,fecha',bitacora:'nombre,dia',ediciones:'proyecto,partida_id',reinicios:'rid',reportabilidad:'rid',restricciones_generales:'id',tormenta:'id',roles_usuarios:'nombre',cuadrillas:'id',roles_permisos:'rol',fotos_borradas:'id',avance_semana:'proyecto,semana_id,partida_id',metas_semana:'proyecto,semana_id,partida_id',prog_semana:'proyecto,semana_id,partida_id',razones_noavance:'proyecto,semana_id,partida_id,fecha',semanas:'proyecto,semana_id',interf_log:'id',presencia_lapsos:'id'})[t]||null}
 var _IMP_SKIP={app_config:'configuración viva del server (versión mínima · modo prueba)',dispositivos:'registro vivo de equipos conectados'};
 function _unzipDir(buf){var u8=new Uint8Array(buf),dv=new DataView(buf);var eo=-1;
  for(var i=u8.length-22;i>=Math.max(0,u8.length-22-65557);i--){if(dv.getUint32(i,true)===0x06054b50){eo=i;break}}
@@ -2619,7 +2685,8 @@ try{if($('actAreaHead'))$('actAreaHead').onclick=function(e){var b=$('list');if(
 function _refreshDesglose(){try{var w=$('dayBreak');if(w&&w._dbDate&&typeof renderDayBreak==='function')renderDayBreak(w._dbDate);}catch(e){}}
 function _puedeEditMet(p,f){try{var abierto=!(typeof diaCerrado==='function'&&diaCerrado(f));var adm=(typeof esAdmin==='function'&&esAdmin());var disc=(state.user&&state.user.disc)||'';var okDisc=adm||!p.disc||p.disc===disc;var existe=(state.partes||[]).some(function(z){return z.client_id===p.client_id});return abierto&&okDisc&&existe;}catch(e){return false;}}
 /* ☢️ BORRAR TODA la información del proyecto en la base (conserva roles, permisos, config y dispositivos) */
-async function _wipeDB(){try{
+async function _wipeDB(){if(window._modoPrueba){toast('⛔ Sal del MODO PRUEBAS antes de usar esto');return}
+try{
  if(!(typeof esAdminReal==='function'&&esAdminReal())){toast('Solo el administrador');return}
  var old=document.getElementById('_wipeOv');if(old)old.remove();
  var ov=document.createElement('div');ov.id='_wipeOv';ov.style.cssText='position:fixed;inset:0;z-index:2147483400;background:rgba(15,25,45,.7);display:flex;align-items:flex-end;justify-content:center';
@@ -2638,7 +2705,7 @@ async function _wipeDB(){try{
    try{(await sbSelect('fotos_borradas','select=path_respaldo,path_original')).forEach(function(r){if(r.path_respaldo)paths.push(r.path_respaldo);if(r.path_original)paths.push(r.path_original)})}catch(_e2){}
    for(var i=0;i<paths.length;i+=90){var lote=paths.slice(i,i+90);try{await fetch(sbBase()+'/storage/v1/object/'+FOTO_BUCKET,{method:'DELETE',headers:sbHead({'Content-Type':'application/json'}),body:JSON.stringify({prefixes:lote})})}catch(_e3){}}
    est.textContent='2/4 · vaciando tablas…';
-   var WT=['partes','fotos','fotos_borradas','metrados','nuevas','ediciones','programacion','calendario','reportabilidad','reinicios','pendientes','cambios','conflictos','restricciones_generales','restricciones_partida','tormenta','dias_habilitados','borrados','cuadrillas','bitacora','interf_log','avance_semana','metas_semana','prog_semana','razones_noavance','semanas'];
+   var WT=['partes','fotos','fotos_borradas','metrados','nuevas','ediciones','programacion','calendario','reportabilidad','reinicios','pendientes','cambios','conflictos','restricciones_generales','restricciones_partida','tormenta','dias_habilitados','borrados','cuadrillas','bitacora','interf_log','presencia_lapsos','avance_semana','metas_semana','prog_semana','razones_noavance','semanas'];
    for(var t=0;t<WT.length;t++){var tb=WT[t];var pk=(typeof _impPk==='function'&&_impPk(tb))?_impPk(tb).split(',')[0]:'id';if(tb==='interf_log')pk='id';
     try{await fetch(sbBase()+'/rest/v1/'+tb+'?'+pk+'=not.is.null',{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})})}catch(_e4){}
     est.textContent='2/4 · vaciando tablas… ('+(t+1)+'/'+WT.length+')';}
