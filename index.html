@@ -633,7 +633,7 @@ function _pullRoles(){try{if(!sbReady()||!navigator.onLine)return;fetch(sbBase()
 try{var nmQ=(state.user&&state.user.supervisor)||'';var rQ=m[nmQ];var doneQ=Number(localStorage.getItem('obf4_pedpass_done')||0);if(rQ&&rQ.pedir_pass&&Number(rQ.pedir_pass)>doneQ&&!rQ.pass&&!rQ.bloqueado&&nmQ&&nmQ!=='Luis Antonio Focon Colina'&&$('scrLogin')&&$('scrLogin').classList.contains('hidden')){localStorage.setItem('obf4_pedpass_done',String(rQ.pedir_pass));setTimeout(_defPassVivo,400)}}catch(e){}try{if(typeof updAdminBox==='function')updAdminBox()}catch(e){}}).catch(function(){window._rolesOn=false})}catch(e){}}
 setTimeout(_pullRoles,1500);setInterval(_pullRoles,20000);
 /* === UPD-01: roles operativo + cinturón de red + permisos === */
-function miRol(){var n=(state.user&&state.user.supervisor)||'';if(n==='Luis Antonio Focon Colina')return 'admin';var r=(state.roles||{})[n];if(r&&r.bloqueado)return 'bloqueado';if(r)return r.rol||'sup';return (state.user&&state.user._nuevo)?'nuevo':'sup'}
+function miRol(){var n=(state.user&&state.user.supervisor)||'';if(n==='Luis Antonio Focon Colina')return 'admin';var r=(state.roles||{})[n];if(r&&r.bloqueado)return 'bloqueado';if(r)return r.rol||'sup';/* SIN registro en roles = Solo ver SIEMPRE (si lo borraron, vuelve a pedir permiso — cierre del caso MIKE) */return 'nuevo'}
 function puedeEscribir(){var r=miRol();return r!=='nuevo'&&r!=='bloqueado'}
 function esMod(){return miRol()==='mod'}
 function _apDirecto(parte){try{if(typeof esAdminReal==='function'&&esAdminReal())return true;if(miRol()!=='mod')return false;var f=(parte&&parte.fecha)||'';if(f&&typeof diaCerrado==='function'&&diaCerrado(f))return false;return true}catch(e){return false}}
@@ -1145,7 +1145,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260704b14';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260704b15';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -1575,7 +1575,7 @@ async function _showRoles(){
  var ov=document.getElementById('_rolesOv');if(ov)ov.remove();
  ov=document.createElement('div');ov.id='_rolesOv';
  ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b1220;color:#cfe3ff;font:13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;display:flex;flex-direction:column;padding:12px;box-sizing:border-box';
- ov.innerHTML='<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><b style="font-size:15px;color:#fff">👥 Roles y accesos</b><button id="_rlGo" style="background:#1E7A46;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">✅ VALIDAR y enviar cambios (0)</button><button id="_rlRefr" style="margin-left:auto;background:#2d333b;color:#fff;border:0;border-radius:8px;padding:8px 12px">↻</button><button id="_rlClose" style="background:#444;color:#fff;border:0;border-radius:8px;padding:8px 12px">✕ Cerrar</button></div><div style="display:flex;gap:6px;margin-bottom:8px"><input id="_rlNew" placeholder="Añadir persona por nombre exacto" style="flex:1;padding:8px;border-radius:8px;border:1px solid #30363d;background:#0d1117;color:#fff"><button id="_rlAdd" style="background:#1f6feb;color:#fff;border:0;border-radius:8px;padding:8px 12px">+ Añadir</button></div><div style="font-size:11px;color:#7d8590;margin-bottom:8px">Los cambios quedan en naranja "SIN ENVIAR" hasta que pulses ✅ VALIDAR. Roles vive en la base; ningún update los toca.</div><div id="_rlList" style="flex:1;overflow:auto">Cargando...</div>';
+ ov.innerHTML='<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><b style="font-size:15px;color:#fff">👥 Roles y accesos</b><button id="_rlGo" style="background:#1E7A46;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:800">✅ VALIDAR y enviar cambios (0)</button><span id="_rlVivo" style="border:1px solid #243a5e;border-radius:8px;padding:7px 10px;font-weight:800;font-size:11.5px;color:#7d8590">⋯</span><button id="_rlRefr" style="margin-left:auto;background:#2d333b;color:#fff;border:0;border-radius:8px;padding:8px 12px">↻</button><button id="_rlClose" style="background:#444;color:#fff;border:0;border-radius:8px;padding:8px 12px">✕ Cerrar</button></div><div style="display:flex;gap:6px;margin-bottom:8px"><input id="_rlNew" placeholder="Añadir persona por nombre exacto" style="flex:1;padding:8px;border-radius:8px;border:1px solid #30363d;background:#0d1117;color:#fff"><button id="_rlAdd" style="background:#1f6feb;color:#fff;border:0;border-radius:8px;padding:8px 12px">+ Añadir</button></div><div style="font-size:11px;color:#7d8590;margin-bottom:8px">Los cambios quedan en naranja "SIN ENVIAR" hasta que pulses ✅ VALIDAR. Roles vive en la base; ningún update los toca.</div><div id="_rlList" style="flex:1;overflow:auto">Cargando...</div>';
  document.body.appendChild(ov);
  var OPT=[['nuevo','Solo ver'],['sup','Supervisor'],['mod','MOD'],['log','Logística'],['admin','ADMIN']];
  var dirty={};
@@ -1592,11 +1592,23 @@ async function _showRoles(){
      var r=map[n]||{};var d=dirty[n]||{};var rol=(d.rol!=null?d.rol:(r.rol||'nuevo'));var bl=(d.bloqueado!=null?d.bloqueado:!!r.bloqueado);var pt=(d.pass_txt!=null?d.pass_txt:(r.pass_txt||''));var isDirty=!!dirty[n];
      var sel='<select data-n="'+esc(n)+'" class="_rlRol" style="background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;padding:5px">'+OPT.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===rol?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>';
      var yaPed=!!r.pedir_pass;var btnPed=(!pt&&!bl)?('<button class="_rlPed" data-n="'+esc(n)+'" style="background:'+(yaPed?'#0C5132':'#1f6feb')+';color:#fff;border:0;border-radius:7px;padding:6px 10px;font-weight:700">'+(yaPed?'📨 Enviada ✓ · reenviar':'📨 Pedir su contraseña')+'</button>'):'';
-     return '<div style="border:1px solid '+(isDirty?'#b06a00':'#243a5e')+';border-radius:10px;padding:10px;margin-bottom:8px;background:'+(isDirty?'#241a0a':'transparent')+'"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:#fff">'+esc(n)+'</b>'+(isDirty?'<span style="color:#f0a020;font-weight:800;font-size:11px">● SIN ENVIAR</span>':'')+'<span style="margin-left:auto"></span>'+sel+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><span style="color:#7d8590">🔑 '+(pt?('<b style="color:#9FE8B0">'+esc(pt)+'</b>'):'<i style="color:#7d8590">sin contraseña</i>')+'</span><button class="_rlPass" data-n="'+esc(n)+'" style="background:#33406a;color:#fff;border:0;border-radius:7px;padding:6px 10px">Definir contraseña</button><button class="_rlBlq" data-n="'+esc(n)+'" style="background:'+(bl?'#7A1A1A':'#2d333b')+';color:#fff;border:0;border-radius:7px;padding:6px 10px">'+(bl?'🔒 Bloqueado':'Bloquear')+'</button>'+btnPed+'</div></div>';
+     var btnDel=(n!=='Luis Antonio Focon Colina')?('<button class="_rlDel" data-n="'+esc(n)+'" title="Borrar de los accesos (deberá pedir permiso de nuevo)" style="background:#7A1A1A;color:#fff;border:0;border-radius:7px;width:30px;height:30px;font-weight:800;font-size:15px;flex:none">✕</button>'):'';
+     return '<div style="border:1px solid '+(isDirty?'#b06a00':'#243a5e')+';border-radius:10px;padding:10px;margin-bottom:8px;background:'+(isDirty?'#241a0a':'transparent')+'"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:#fff">'+esc(n)+'</b>'+(isDirty?'<span style="color:#f0a020;font-weight:800;font-size:11px">● SIN ENVIAR</span>':'')+'<span style="margin-left:auto"></span>'+btnDel+sel+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><span style="color:#7d8590">🔑 '+(pt?('<b style="color:#9FE8B0">'+esc(pt)+'</b>'):'<i style="color:#7d8590">sin contraseña</i>')+'</span><button class="_rlPass" data-n="'+esc(n)+'" style="background:#33406a;color:#fff;border:0;border-radius:7px;padding:6px 10px">Definir contraseña</button><button class="_rlBlq" data-n="'+esc(n)+'" style="background:'+(bl?'#7A1A1A':'#2d333b')+';color:#fff;border:0;border-radius:7px;padding:6px 10px">'+(bl?'🔒 Bloqueado':'Bloquear')+'</button>'+btnPed+'</div></div>';
    }).join('')||'<div style="color:#7d8590">Sin usuarios.</div>';
    Array.prototype.forEach.call(L.querySelectorAll('._rlRol'),function(s){s.onchange=function(){var n=s.getAttribute('data-n');dirty[n]=dirty[n]||{};dirty[n].rol=s.value;updGo();draw()}});
    Array.prototype.forEach.call(L.querySelectorAll('._rlBlq'),function(b){b.onclick=function(){var n=b.getAttribute('data-n');var cur=(dirty[n]&&dirty[n].bloqueado!=null)?dirty[n].bloqueado:!!(map[n]||{}).bloqueado;dirty[n]=dirty[n]||{};dirty[n].bloqueado=!cur;updGo();draw()}});
    Array.prototype.forEach.call(L.querySelectorAll('._rlPass'),function(b){b.onclick=async function(){var n=b.getAttribute('data-n');var p=prompt('Contraseña para '+n+' (mínimo 4). Quedará visible aquí para ti):');if(p==null||String(p).length<4){toast('Cancelado / muy corta');return}dirty[n]=dirty[n]||{};dirty[n].pass_txt=p;dirty[n].pass=await _hashPass(p);updGo();draw()}});
+   Array.prototype.forEach.call(L.querySelectorAll('._rlDel'),function(b){b.onclick=async function(){var n=b.getAttribute('data-n');
+     if(!confirm('✕ ¿BORRAR a "'+n+'" de los accesos?\n\nNo borra sus partes ni registros del proyecto — solo su acceso y contraseña.\nSi vuelve a entrar quedará en SOLO VER y deberá solicitar unirse de nuevo (te llega la solicitud).\n\n¿Borrar?'))return;
+     b.disabled=true;
+     try{var rr=await fetch(sbBase()+'/rest/v1/roles_usuarios?nombre=eq.'+encodeURIComponent(n),{method:'DELETE',headers:sbHead({'Prefer':'return=minimal'})});
+       if(!rr.ok&&rr.status!==404)throw new Error('HTTP '+rr.status);
+       delete map[n];delete dirty[n];try{if(state.roles&&state.roles[n]){delete state.roles[n];store.set('obf4_roles',state.roles)}}catch(e){}
+       try{(state.partes||[]).forEach(function(p){if(p.supervisor===n&&!map[n])map[n]={nombre:n,rol:'nuevo'}})}catch(e){}
+       names=Object.keys(map).sort();updGo();draw();
+       toast('✕ '+n+' borrado — si vuelve, entra en Solo ver y debe pedir permiso');
+     }catch(e){b.disabled=false;toast('No se pudo borrar: '+e)}
+   }});
    Array.prototype.forEach.call(L.querySelectorAll('._rlPed'),function(b){b.onclick=async function(){var n=b.getAttribute('data-n');
      if(!confirm('📨 ¿Enviar a "'+n+'" la solicitud para que defina SU contraseña?\n\nLe aparecerá el aviso apenas tenga la app abierta con señal (revisa cada minuto y medio), o al abrir la app.'))return;
      b.disabled=true;b.textContent='enviando…';
@@ -1609,17 +1621,22 @@ async function _showRoles(){
    }});
  }
  draw();updGo();
- /* refresco en vivo del panel: si no hay cambios sin enviar, baja los roles cada 7s y repinta solo si algo cambió */
+ /* refresco en vivo del panel: si no hay cambios sin enviar, baja los roles cada 4s y repinta solo si algo cambió */
  var _rlPrev=JSON.stringify(rows||[]);
+ function _rlChip(al){var ch=document.getElementById('_rlVivo');if(!ch)return;var h=new Date();var hh=String(h.getHours()).padStart(2,'0')+':'+String(h.getMinutes()).padStart(2,'0')+':'+String(h.getSeconds()).padStart(2,'0');
+  if(window._rtVivo===1){ch.style.color='#7fd7a5';ch.style.borderColor='#1E7A46';ch.textContent='🟢 EN VIVO · accesos al segundo'+(al?(' · '+hh):'')}
+  else{ch.style.color='#FFD27A';ch.style.borderColor='#b06a00';ch.textContent='🟠 respaldo · revisa cada 20 s'}}
+ _rlChip();
  var _rlIv=setInterval(async function(){try{
    if(!document.getElementById('_rolesOv')){clearInterval(_rlIv);return}
+   _rlChip();
    if(Object.keys(dirty).length)return;
    var rws=await sbSelect('roles_usuarios','select=*&order=nombre');
    var js=JSON.stringify(rws||[]);if(js===_rlPrev)return;_rlPrev=js;
    map={};(rws||[]).forEach(function(r){if(r&&r.nombre)map[r.nombre]=r});
    try{(state.partes||[]).forEach(function(p){if(p.supervisor&&p.supervisor!=='Carga inicial'&&!map[p.supervisor])map[p.supervisor]={nombre:p.supervisor,rol:'nuevo'}})}catch(e){}
-   names=Object.keys(map).sort();draw();
- }catch(e){}},7000);
+   names=Object.keys(map).sort();draw();_rlChip(1);
+ }catch(e){}},4000);
  document.getElementById('_rlAdd').onclick=function(){var v=(document.getElementById('_rlNew').value||'').trim();if(!v)return;if(!map[v]){map[v]={nombre:v,rol:'nuevo'};names=Object.keys(map).sort()}dirty[v]=dirty[v]||{};if(dirty[v].rol==null)dirty[v].rol='nuevo';document.getElementById('_rlNew').value='';updGo();draw()};
  document.getElementById('_rlGo').onclick=async function(){
    var ks=Object.keys(dirty);if(!ks.length){toast('No hay cambios que enviar');return}
