@@ -262,6 +262,7 @@
 #topSync .ti{display:inline-block;font-size:13px;line-height:1;animation:tsspin .9s linear infinite}
 
 
+#appVer,#appVer2{display:none!important}
 /* ===== MODO WEB / ESCRITORIO (opt-in en pantallas grandes; el modo celular queda intacto) ===== */
 #webToggle{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:2147483000;background:#1F3864;color:#fff;border:0;border-radius:0 0 12px 12px;padding:6px 18px;font:800 12.5px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.32);display:none;align-items:center;gap:6px}
 body.webmode{align-items:flex-start}
@@ -1011,7 +1012,34 @@ function puedeAcc(key){try{if(typeof esAdminReal==='function'&&esAdminReal())ret
 function _gateAcc(key,label){if(puedeAcc(key))return true;try{toast('⛔ Tu rol no tiene permiso para: '+(label||key))}catch(e){}return false}
 /* ---- MODO PRUEBAS (solo este equipo del admin): todo se ve real, nada se guarda ---- */
 window._modoPrueba=(function(){try{return localStorage.getItem('obf4_modoprueba')==='1'}catch(e){return false}})();
-function _mpBar(){var b=document.getElementById('_mpBar');if(!window._modoPrueba){if(b)b.remove();var oc=document.getElementById('_mpCss');if(oc)oc.remove();return}
+function _botBar(){
+ try{
+  var el=document.getElementById('botBar');
+  if(!el){el=document.createElement('div');el.id='botBar';document.body.appendChild(el);}
+  var admin=(typeof esAdminReal==='function'&&esAdminReal());
+  var restaurando=!!(window._mpFreeze&&!window._mpRestoring)&&!admin;
+  var prueba=!!window._modoPrueba;
+  var so='libre';try{if(typeof stormOverall==='function')so=stormOverall()}catch(e){}var storm=(so!=='libre');
+  var base='position:fixed;left:0;right:0;bottom:0;z-index:2147483200;text-align:center;box-sizing:border-box;padding-left:10px;padding-right:10px;padding-bottom:max(6px,env(safe-area-inset-bottom))';
+  var hayAnuncio=restaurando||prueba||storm;
+  if(restaurando){
+   el.style.cssText=base+';background:#1F3864;color:#fff;padding-top:10px;font:800 12.5px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial;box-shadow:0 -2px 12px rgba(0,0,0,.35)';
+   el.onclick=null;el.innerHTML='⏳ El administrador está RESTAURANDO la base — no toques nada, tu equipo se reiniciará solo';
+  }else if(prueba){
+   el.style.cssText=base+';background:#FFD100;color:#3A2A00;padding-top:9px;font:800 12.5px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial;box-shadow:0 -2px 12px rgba(0,0,0,.3)';
+   el.onclick=null;el.innerHTML='⚠️ MODO PRUEBAS EN VIVO — al FINALIZAR todo vuelve a como estaba'+(admin?' · <span id="_mpBarOff" style="text-decoration:underline;cursor:pointer;font-weight:900">FINALIZAR</span>':'');
+   var off=document.getElementById('_mpBarOff');if(off)off.onclick=function(){if(typeof _mpToggle==='function')_mpToggle()};
+  }else if(storm){
+   el.style.cssText=base+';background:'+(so==='rojo'?'#B42318':'#7A5B00')+';color:#fff;padding-top:10px;font:800 12.5px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial;cursor:pointer;box-shadow:0 -2px 12px rgba(0,0,0,.3)';
+   el.innerHTML=(so==='rojo'?'⛈ TORMENTA ELÉCTRICA — PARAR TRABAJOS':'⚠ Alerta amarilla de tormenta');el.onclick=function(){if(typeof openStorm==='function')openStorm()};
+  }else{
+   el.style.cssText=base+';background:transparent;color:#8A94A6;padding-top:0;font:400 10.5px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.4px;pointer-events:none';
+   el.onclick=null;el.innerHTML='versión '+(typeof APP_VER!=='undefined'?APP_VER:'');
+  }
+  try{var ph=document.querySelector('.phone');if(ph)ph.style.paddingBottom=hayAnuncio?'48px':''}catch(e){}
+ }catch(e){}
+}
+function _mpBar(){try{var oc=document.getElementById('_mpCss');if(oc)oc.remove();var ob=document.getElementById('_mpBar');if(ob)ob.remove();document.body.style.marginTop='';}catch(e){}try{_botBar()}catch(e){}return;var b=document.getElementById('_mpBar');if(!window._modoPrueba){if(b)b.remove();var oc=document.getElementById('_mpCss');if(oc)oc.remove();return}
  if(!b){b=document.createElement('div');b.id='_mpBar';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483646;background:#FFD100;color:#3A2A00;font:800 13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:8px 10px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.4);letter-spacing:.02em';b.innerHTML='⚠️ MODO PRUEBAS <u>EN VIVO</u> — todo funciona DE VERDAD entre ustedes; al FINALIZAR, TODO volverá a como estaba · <span id="_mpBarOff" style="text-decoration:underline;cursor:pointer;font-weight:900">FINALIZAR</span>';document.body.appendChild(b);var off=document.getElementById('_mpBarOff');if(off){off.style.display=(typeof esAdminReal==='function'&&esAdminReal())?'':'none';off.onclick=function(){_mpToggle()}}}
  try{var h=b.offsetHeight||34;var st=document.getElementById('_mpCss');if(!st){st=document.createElement('style');st.id='_mpCss';document.head.appendChild(st)}st.textContent='body{margin-top:'+h+'px!important}';b.style.height='';}catch(e){}}
 try{setInterval(function(){try{_mpBar()}catch(e){}},1500)}catch(e){}
@@ -1188,8 +1216,8 @@ async function _mpPoll(){try{if(_mpPollBusy)return;_mpPollBusy=true;if(!(typeof 
  if(srv&&!window._modoPrueba)_mpApply(true,quien);
  else if(!srv&&window._modoPrueba)_mpApply(false);
  _mpPollBusy=false;}catch(e){_mpPollBusy=false}}
-function _mpRestBar(on){var b=document.getElementById('_mpRestBar');if(!on){if(b)b.remove();return}
- if(b)return;b=document.createElement('div');b.id='_mpRestBar';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:#1F3864;color:#fff;padding:12px 14px;font:800 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;text-align:center;box-shadow:0 -2px 12px rgba(0,0,0,.4)';b.innerHTML='⏳ El administrador está RESTAURANDO la base tras las pruebas…<br><span style="font-weight:600;font-size:12px">No toques nada: tu equipo se reiniciará solo en un momento.</span>';document.body.appendChild(b)}
+function _mpRestBar(on){try{var ob=document.getElementById('_mpRestBar');if(ob)ob.remove();}catch(e){}try{_botBar()}catch(e){}return;function _viejo(){var b=document.getElementById('_mpRestBar');if(!on){if(b)b.remove();return}
+ if(b)return;b=document.createElement('div');b.id='_mpRestBar';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:#1F3864;color:#fff;padding:12px 14px;font:800 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;text-align:center;box-shadow:0 -2px 12px rgba(0,0,0,.4)';b.innerHTML='...';document.body.appendChild(b)}}
 setTimeout(_mpPoll,3000);setInterval(_mpPoll,8000);
 function _mpCartel(cual,ok){var prev=document.getElementById('_mpCartel');if(prev)prev.remove();var ov=document.createElement('div');ov.id='_mpCartel';ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(8,8,8,.84);display:flex;align-items:center;justify-content:center;padding:18px';
  if(cual==='on'){ov.innerHTML='<div style="max-width:480px;width:100%;background:#FFD100;color:#231A00;border-radius:18px;padding:26px 20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)"><div style="font-size:54px;line-height:1">🧪</div><div style="font-size:23px;font-weight:900;margin-top:8px">MODO PRUEBA ACTIVADO</div>'+(ok?('<div style="font-size:12.5px;font-weight:800;margin-top:4px;opacity:.85">activado por '+esc(ok)+' — para TODOS los equipos</div>'):'')+'<div style="font-size:14.5px;font-weight:700;margin-top:10px;line-height:1.7">Prueben JUNTOS lo que quieran:<br>todo funciona DE VERDAD y se ve entre ustedes al instante.<br><u>Al FINALIZAR, la base volverá EXACTAMENTE a como estaba</u>.<br>La barra amarilla te lo recordará en todas las pantallas.</div><button id="_mpOk" style="margin-top:18px;background:#231A00;color:#FFD100;border:0;border-radius:12px;padding:14px 26px;font-size:16px;font-weight:900;cursor:pointer;width:100%">ENTENDIDO — EMPEZAR PRUEBAS 🧪</button></div>';}
@@ -1446,7 +1474,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b61';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}
+var APP_VER='v20260705b62';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
@@ -2425,7 +2453,7 @@ function renderStorm(){var o=stormOverall();var ss=$('stormState');if(ss){ss.cla
   var zc=$('stormZones');if(zc){zc.innerHTML=ZONAS.map(function(z){var n=zonaNivel(z);var ini=zonaInicio(z);var since=(n!=='libre'&&ini)?('<span class="zsince">desde '+fmtHora(ini)+'</span>'):'';return '<div class="zcard z-'+n+'"><div class="zname">'+esc(z)+'<span class="zstate s-'+n+'">'+n.toUpperCase()+'</span>'+since+'</div><div class="zbtns"><button class="zb amar" data-z="'+esc(z)+'" data-n="amarillo">⚠ Amarillo</button><button class="zb rojo" data-z="'+esc(z)+'" data-n="rojo">⛈ Rojo</button><button class="zb libre" data-z="'+esc(z)+'" data-n="libre">✓ Libre</button></div></div>'}).join('');
     zc.querySelectorAll('.zb').forEach(function(b){b.onclick=function(){markStorm(b.getAttribute('data-z'),b.getAttribute('data-n'))}})}
   var lg=$('stormLog');if(lg){var eps=stormEpisodes();var _tot='<div class="storm-total">⏱ Tiempo total de tormenta (sin duplicar áreas): <b>'+fmtDur(stormTotalUnion())+'</b></div>';lg.innerHTML=_tot+(eps.length?eps.map(function(ep){var fin=ep.fin?fmtHora(ep.fin):'<b style="color:var(--danger)">en curso</b>';var dur=fmtDur((ep.fin||Date.now())-ep.ini);return '<div class="slog"><span class="snv s-'+ep.nivel+'">'+ep.nivel.toUpperCase()+'</span> <b>'+esc(ep.zona)+'</b> · '+fmtDiaS(ep.ini)+' · '+fmtHora(ep.ini)+' → '+fin+' · <b>'+dur+'</b></div>'}).join(''):'<div style="font-size:12px;color:var(--muted)">Sin registros.</div>')}}
-function updStormBanner(){var b=$('stormBanner');if(!b)return;var o=stormOverall();var ph=document.querySelector('.phone');if(o==='libre'){b.classList.add('hidden');if(ph){ph.classList.remove('storm-red','storm-yellow')}return}var zlist=ZONAS.filter(function(z){return zonaNivel(z)!=='libre'}).map(function(z){return z+' ('+zonaNivel(z)+')'}).join(', ');b.className='stormbanner '+(o==='rojo'?'sb-red':'sb-yellow');b.innerHTML=(o==='rojo'?'⛈ TORMENTA ELÉCTRICA — PARAR TRABAJOS':'⚠ Alerta amarilla de tormenta')+'<small>'+esc(zlist)+'</small>';if(ph){ph.classList.toggle('storm-red',o==='rojo');ph.classList.toggle('storm-yellow',o==='amarillo')}b.onclick=openStorm}
+function updStormBanner(){var b=$('stormBanner');if(!b)return;var o=stormOverall();var ph=document.querySelector('.phone');if(o==='libre'){b.classList.add('hidden');if(ph){ph.classList.remove('storm-red','storm-yellow')}try{_botBar()}catch(e){}return}var zlist=ZONAS.filter(function(z){return zonaNivel(z)!=='libre'}).map(function(z){return z+' ('+zonaNivel(z)+')'}).join(', ');b.className='stormbanner '+(o==='rojo'?'sb-red':'sb-yellow');b.innerHTML=(o==='rojo'?'⛈ TORMENTA ELÉCTRICA — PARAR TRABAJOS':'⚠ Alerta amarilla de tormenta')+'<small>'+esc(zlist)+'</small>';if(ph){ph.classList.toggle('storm-red',o==='rojo');ph.classList.toggle('storm-yellow',o==='amarillo')}b.onclick=openStorm;try{_botBar()}catch(e){}}
 function openStorm(){$('scrDiario').classList.add('hidden');$('scrList').classList.add('hidden');if($('scrProg'))$('scrProg').classList.add('hidden');$('scrStorm').classList.remove('hidden');if($('stormSub'))$('stormSub').textContent=(state.user?state.user.supervisor:'');renderStorm();syncNow(true)}
 function closeStorm(){$('scrStorm').classList.add('hidden');$('scrDiario').classList.remove('hidden');renderDiario()}
 if($('btnStorm'))$('btnStorm').onclick=function(){if(typeof _gateW==='function'&&!_gateW())return;if(typeof _gateAcc==='function'&&!_gateAcc('rep_tormenta','Reportar tormenta'))return;openStorm()};
