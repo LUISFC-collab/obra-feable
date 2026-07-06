@@ -1,1 +1,1 @@
-destrabar Pages -> c18 (fix chips colapsados; contorno unico que abarca dias + empuja las no-cuadrilla, sin tocar el formato)
+destrabar Pages -> c19 (chips del cronograma muestran area-sistema en vez del codigo, compacto)
