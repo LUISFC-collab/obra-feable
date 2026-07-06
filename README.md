@@ -51,3 +51,5 @@
 <!-- deploy b83 20260706T023345Z -->
 
 <!-- deploy b84 20260706T024254Z -->
+
+(v20260705c publicada el 5/7 - fotos reparadas)
