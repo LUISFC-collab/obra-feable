@@ -1015,6 +1015,11 @@ function _gateAcc(key,label){if(puedeAcc(key))return true;try{_solicitarPermiso(
 function _solicitarPermiso(key,label){try{var me=(state.user&&state.user.supervisor)||'';var disc=(state.user&&state.user.disc)||'';var desc='🔑 '+me+' pide permiso para: '+(label||key);state.pend=state.pend||[];if(state.pend.some(function(z){return z.tipo==='solicperm'&&z.descripcion===desc&&z.supervisor===me&&!z.resuelto})){if(typeof toast==='function')toast('Ya pediste ese permiso — espera al admin');return}state.pend.push({id:(typeof uuid==='function'?uuid():String(Date.now())),proyecto:DATA.proyecto,tipo:'solicperm',descripcion:desc,supervisor:me,disciplina:disc,ts:(typeof nowSrv==='function'?nowSrv():Date.now()),fecha:(typeof todayISO==='function'?todayISO():''),critico:false,coments:[],resuelto:false,synced:false});if(typeof pendSave==='function')pendSave();if(typeof syncNow==='function')syncNow(true);if(typeof toast==='function')toast('🔒 Sin permiso — solicitud enviada al administrador ✓')}catch(e){}}
 /* ---- MODO PRUEBAS (solo este equipo del admin): todo se ve real, nada se guarda ---- */
 window._modoPrueba=(function(){try{return localStorage.getItem('obf4_modoprueba')==='1'}catch(e){return false}})();
+function _fotosSinSubir(){var n=0;try{
+  (state.partes||[]).forEach(function(p){(p.fotos||[]).forEach(function(u){if(typeof u==='string'&&u.indexOf('data:')===0&&u.length>100)n++})});
+  Object.keys(state.repo||{}).forEach(function(id){(state.repo[id]||[]).forEach(function(x){(x.fotos||[]).forEach(function(u){if(typeof u==='string'&&u.indexOf('data:')===0&&u.length>100)n++})})});
+  (state.pend||[]).forEach(function(p){(p.fotos||[]).forEach(function(u){if(typeof u==='string'&&u.indexOf('data:')===0&&u.length>100)n++})});
+ }catch(e){}return n}
 function _botBar(){
  try{
   var el=document.getElementById('botBar');
@@ -1027,7 +1032,8 @@ function _botBar(){
   var prueba=!!window._modoPrueba;
   var so='libre';try{if(typeof stormOverall==='function')so=stormOverall()}catch(e){}var storm=(so!=='libre');
   var base='position:fixed;left:0;right:0;bottom:0;z-index:2147483200;text-align:center;box-sizing:border-box;padding-left:10px;padding-right:10px;padding-bottom:max(6px,env(safe-area-inset-bottom))';
-  var hayAnuncio=restaurando||prueba||storm;
+  var _fp=0;try{_fp=_fotosSinSubir()}catch(_fe){}
+  var hayAnuncio=restaurando||prueba||storm||(_fp>0);
   if(restaurando){
    el.style.cssText=base+';background:#1F3864;color:#fff;padding-top:10px;font:800 12.5px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial;box-shadow:0 -2px 12px rgba(0,0,0,.35)';
    el.onclick=null;el.innerHTML='⏳ El administrador está RESTAURANDO la base — no toques nada, tu equipo se reiniciará solo';
@@ -1038,6 +1044,10 @@ function _botBar(){
   }else if(storm){
    el.style.cssText=base+';background:'+(so==='rojo'?'#B42318':'#7A5B00')+';color:#fff;padding-top:10px;font:800 12.5px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial;cursor:pointer;box-shadow:0 -2px 12px rgba(0,0,0,.3)';
    el.innerHTML=(so==='rojo'?'⛈ TORMENTA ELÉCTRICA — PARAR TRABAJOS':'⚠ Alerta amarilla de tormenta');el.onclick=function(){if(typeof openStorm==='function')openStorm()};
+  }else if(_fp>0){
+   el.style.cssText=base+';background:#8A4B00;color:#fff;padding-top:9px;font:800 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial;cursor:pointer;box-shadow:0 -2px 12px rgba(0,0,0,.3)';
+   el.innerHTML='📷 '+_fp+' foto(s) SIN subir al proyecto — toca para reintentar';
+   el.onclick=function(){if(typeof toast==='function')toast('📤 Reintentando subir fotos…');try{if(typeof syncNow==='function')syncNow(false)}catch(e){}try{if(typeof _showFotosSrv==='function')_showFotosSrv()}catch(e){}};
   }else{
    el.style.cssText=base+';background:transparent;color:#8A94A6;padding-top:0;font:400 10.5px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.4px;pointer-events:none';
    el.onclick=null;el.innerHTML='versión '+(typeof APP_VER!=='undefined'?APP_VER:'');
@@ -1508,7 +1518,7 @@ var _srvMs=null;
 function _srvPing(){try{if(!(typeof sbReady==='function'&&sbReady()&&navigator.onLine))return;var t0=Date.now();fetch(sbBase()+'/rest/v1/dispositivos?select=device_id&limit=1',{headers:{apikey:state.cfg.supaKey,Authorization:'Bearer '+state.cfg.supaKey}}).then(function(){_srvMs=Date.now()-t0;_updSumSync();}).catch(function(){_srvMs=null;_updSumSync();});}catch(e){}}
 function _updSumSync(){try{var _ts=document.getElementById('topSync');if(_ts)_ts.style.setProperty('display','none','important');var pend=(typeof pendingCount==='function')?pendingCount():0;var on=(typeof navigator!=='undefined')?navigator.onLine:true;var sets=[['sumSyncMain','sumSyncMs','sumSyncUp','sumUpNum','sumSyncDiv'],['dSyncMain','dSyncMs','dSyncUp','dUpNum','dSyncDiv']];for(var i=0;i<sets.length;i++){var s=sets[i];var m=document.getElementById(s[0]),ms=document.getElementById(s[1]),up=document.getElementById(s[2]),num=document.getElementById(s[3]),div=document.getElementById(s[4]);if(!m)continue;if(!on){m.textContent='⚠';m.style.color='#FFD27A';}else{m.textContent='✓';m.style.color='#FFFFFF';}if(ms)ms.textContent=on?((_srvMs!=null)?(_srvMs+' ms'):'… ms'):'offline';if(pend>0){if(num)num.textContent=pend;if(up){up.style.display='inline-flex';up.classList.add('sumUpBlink');}if(div)div.style.display='block';}else{if(up){up.style.display='none';up.classList.remove('sumUpBlink');}if(div)div.style.display='none';}}}catch(e){}}
 /* === FIX anti-pérdida: subir solo lo cambiado + pausar sync al editar === */
-var APP_VER='v20260705b82';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
+var APP_VER='v20260705b83';try{['appVer','appVer2'].forEach(function(_ai){var _av=document.getElementById(_ai);if(_av)_av.textContent='versión '+APP_VER})}catch(_e){}try{setTimeout(function(){try{_botBar()}catch(e){}},300)}catch(_e){}
 var _SCRKEY='obf4_lastscr';var _scrSaverOn=false;
 function _visScr(){var ids=['scrList','scrPend','scrProg','scrBita','scrInvDay','scrRestot','scrAdmList','scrDiario'];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.classList.contains('hidden'))return ids[i]}return null}
 function _scrSave(){try{if(!(state&&state.user))return;var v=_visScr();if(!v)return;localStorage.setItem(_SCRKEY,JSON.stringify({id:v,date:(typeof activeDate!=='undefined'&&activeDate)||null}))}catch(e){}}
