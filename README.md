@@ -1,1 +1,1 @@
-destrabar Pages -> c11 (cuadro de comprobacion de fotos por categoria en backup)
+destrabar Pages -> c12 (fix levantar restriccion gana + DB: keep_newest reloj/empates)
