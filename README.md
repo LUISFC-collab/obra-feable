@@ -1,1 +1,1 @@
-destrabar Pages -> c22 (Gantt: check 'Ajustar a pantalla' alterna entre modo foto/zoom y ajuste al ancho con scroll normal)
+destrabar Pages -> c23 (versiones de nombre: boton borrar por version, con permiso en roles y confirmacion)
