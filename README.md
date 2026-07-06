@@ -1,1 +1,1 @@
-destrabar Pages -> c13 (cuadrillas de cronograma: agrupar partidas en cuadros de color)
+destrabar Pages -> c14 (cuadrillas de cronograma tambien en el calendario semana/mes)
