@@ -1,1 +1,1 @@
-destrabar Pages -> c14 (cuadrillas de cronograma tambien en el calendario semana/mes)
+destrabar Pages -> c15 (cuadros de cuadrilla que abarcan los dias en el calendario + banner)
