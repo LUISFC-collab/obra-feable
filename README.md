@@ -1,1 +1,1 @@
-destrabar Pages -> c15 (cuadros de cuadrilla que abarcan los dias en el calendario + banner)
+destrabar Pages -> c16 (cuadro por cuadrilla que agrupa solo sus actividades, deja las demas fuera)
