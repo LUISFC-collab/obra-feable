@@ -1,1 +1,1 @@
-destrabar Pages -> c21 (chip cronograma: 3 niveles WBS area-sistema + actividad, sin quitar el nombre)
+destrabar Pages -> c22 (Gantt: check 'Ajustar a pantalla' alterna entre modo foto/zoom y ajuste al ancho con scroll normal)
