@@ -1,1 +1,1 @@
-destrabar Pages -> c10 (lote fotos+nombres+eliminadas+DB realtime)
+destrabar Pages -> c11 (cuadro de comprobacion de fotos por categoria en backup)
