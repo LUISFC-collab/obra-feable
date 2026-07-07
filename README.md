@@ -1,1 +1,1 @@
-destrabar Pages -> c33 (panel admin: quitado el desglose global 'Registros y tiempos'; ahora cada persona en su desglose tiene 2 botones -> SU log de cambios (_showUserLog) y SUS lapsos de tiempo (_showLapsos). Resto igual: plomo, conectados verde/desconectados rojo, glow, restr interna/mina/total/coment + fotos hoy/DB, total del dia por persona + conexion total)
+destrabar Pages -> c34 (panel admin: fondo negro mate #16171A; quitados los botones 'Bitacora de conexiones' e 'Invalidar TODOS los cambios' del menu admin)
