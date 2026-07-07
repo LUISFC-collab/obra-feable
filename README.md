@@ -1,1 +1,1 @@
-destrabar Pages -> c27 (diario: sabado/domingo/feriado como "Descanso" rojo pastel compacto; botones Pendientes/Reporte movidos al pie junto a Cronograma/Tormenta/Restriccion, todos compactos; quitado titulo "Mis metrados por dia")
+destrabar Pages -> c28 (diario: boton PDF con icono limpio 📄 en vez del proyector 📽 que Windows dibujaba como corazon; corregido en tarjetas del dia y en el modal Previsualizar)
