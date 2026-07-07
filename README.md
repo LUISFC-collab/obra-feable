@@ -1,1 +1,1 @@
-destrabar Pages -> c23 (versiones de nombre: boton borrar por version, con permiso en roles y confirmacion)
+destrabar Pages -> c24 (copias: indicador fijo de frecuencia+fotos asignadas, se actualiza al cambiar/validar)
