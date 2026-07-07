@@ -1,1 +1,1 @@
-destrabar Pages -> c29 (revertido el icono PDF a 📽 -opcion A- que en los celulares se ve bien; el 📄 se veia peor en desktop segun Luis; tarjetas del dia + modal Previsualizar)
+destrabar Pages -> c30 (iconos Previsualizar/PDF como SVG en vez de emoji, para que se vean igual en PC, iPhone y Android; ojo + proyector -opcion A en SVG-; tarjetas del dia + modal Previsualizar)
