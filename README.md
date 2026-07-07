@@ -1,1 +1,1 @@
-destrabar Pages -> c26 (inicio: 3 botones Cronograma/Tormenta/Restriccion en una sola linea, compactos)
+destrabar Pages -> c27 (diario: sabado/domingo/feriado como "Descanso" rojo pastel compacto; botones Pendientes/Reporte movidos al pie junto a Cronograma/Tormenta/Restriccion, todos compactos; quitado titulo "Mis metrados por dia")
