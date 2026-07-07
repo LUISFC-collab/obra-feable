@@ -1,1 +1,1 @@
-destrabar Pages -> c34 (panel admin: fondo negro mate #16171A; quitados los botones 'Bitacora de conexiones' e 'Invalidar TODOS los cambios' del menu admin)
+destrabar Pages -> c35 (panel admin: boton encabezado = rol elegido en 'Actuar como' (miRol/esAdmin/puedeAcc segun config de roles), sin banner/toast; desplegable de asignar rol dinamico desde state.rolperms (SupMec/Elec/Civil + roles nuevos); Config = 1 boton con HUD de pestañas Config/Permisos/Roles/Equipos; 4 botones del panel glass casi negro, letras color+contorno, iconos SVG animados)
