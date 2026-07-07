@@ -1,1 +1,1 @@
-destrabar Pages -> c31 (boton PDF de las tarjetas: proyector SVG rojo con latido/glow -animacion que se enciende y vuelve al rojo-, fondo blanco; Previsualizar sin cambios)
+destrabar Pages -> c32 (panel admin rediseñado: fondo plomo, desglosables Conectados-verde / Desconectados-rojo con glow SVG, pastillas restr interna/mina/total/coment + fotos hoy/DB (sin tormenta), Total del dia por persona + Conexion total del dia, y desglose Registros y tiempos -> log de cambios (openInvDay) y lapsos de tiempo (openBita))
