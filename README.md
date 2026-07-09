@@ -1,3 +1,3 @@
-destrabar Pages -> c46 (BACK_CRONOGRAMAS ahora vive en la DB con tablas propias, como pidio Luis. Crear un respaldo escribe: back_cron (1 fila por respaldo: nombre "SEMANA 1" + toda la secuencia del cronograma en actividades jsonb) y back_cron_cuad (las cuadrillas armadas). Se jala en REALTIME (jala->_bkcPull), con updated_at (trigger) y tombstone via deleted_at (soft-delete, el borrar hace PATCH deleted_at, no borrado duro). El calendario NO se duplica: la vista de respaldo usa el calendario vivo/compartido. El cronograma vivo quedo como estaba. Solo el admin crea (el interceptor de red ya bloquea nuevo/bloqueado). Validado end-to-end contra Columbito.)
+# obra-feable — ambiente FEABLE (pruebas/avances) de la app de obra
 
-Water Transition II - Carachugo 1-9. PWA de una sola pagina (index.html + sw.js + version.txt) en GitHub Pages + Supabase.
+<!-- redeploy v20260704a 2026-07-04T10:40:20Z -->
