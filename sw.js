@@ -1,7 +1,7 @@
 /* Service worker — Parte de obra (Water Transition II)
    Guarda la app en el telefono y la abre SIN conexion, pero SIEMPRE trae la version
    mas nueva cuando hay internet. Cambia CACHE en cada despliegue para no servir data vieja. */
-const CACHE = 'obra-feable-v20260709b9';
+const CACHE = 'obra-feable-v20260709c2';
 const SHELL = ['./', './index.html', './config.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
@@ -10,8 +10,8 @@ self.addEventListener('install', function (e) {
 });
 
 self.addEventListener('activate', function (e) {
-  /* OJO: CacheStorage se comparte por DOMINIO con la pagina de testeo (WaterTransition).
-     Solo se borran caches PROPIOS (obra-feable-*) — nunca los del testeo (wtrans-*). */
+  /* OJO: CacheStorage se comparte por DOMINIO con la pagina real (WaterTransition testeo).
+     Solo se borran caches PROPIOS (obra-feable-*) — nunca los de la otra pagina. */
   e.waitUntil(
     caches.keys()
       .then(function (keys) { return Promise.all(keys.filter(function (k) { return k !== CACHE && k.indexOf('obra-feable-') === 0; }).map(function (k) { return caches.delete(k); })); })
